@@ -78,9 +78,7 @@ export default function RedditIdeaPage() {
     : analysis
     ? getIdeaByUrl(urlInput)
     : null;
-
-  const displayAnalysis = analysis || currentEntry?.analysis;
-
+  const displayAnalysis = currentEntry?.analysis;
   return (
     <div className="flex min-h-screen bg-[#0a0a0a]">
       {/* Sidebar */}

@@ -158,19 +158,27 @@ export default function Home() {
         {/* Top bar */}
         <header className="border-b border-[#1a1a1a] sticky top-0 z-40 backdrop-blur-md bg-[#0a0a0a]/90">
           <div className="max-w-3xl mx-auto px-6 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {saving && (
-                <span className="flex items-center gap-1.5 text-[#555] text-xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Saving to Supabase...
-                </span>
-              )}
-              {activeId && !saving && (
-                <span className="flex items-center gap-1.5 text-[#555] text-xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Saved
-                </span>
-              )}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                {saving && (
+                  <span className="flex items-center gap-1.5 text-[#555] text-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Saving to Supabase...
+                  </span>
+                )}
+                {activeId && !saving && (
+                  <span className="flex items-center gap-1.5 text-[#555] text-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Saved
+                  </span>
+                )}
+              </div>
+              <Link
+                href="/reddit-idea"
+                className="text-[#555] hover:text-[#ff2d20] text-sm transition-colors font-semibold"
+              >
+                🔗 Reddit Ideas
+              </Link>
             </div>
             {result && (
               <button
@@ -295,7 +303,7 @@ export default function Home() {
                     )}
                   </p>
                 </div>
-                <div className="flex-1 flex justify-end">
+                {/* <div className="flex-1 flex justify-end">
                   <button
                     onClick={handleDraftContent}
                     disabled={draftLoading}
@@ -306,7 +314,7 @@ export default function Home() {
                   >
                     {draftLoading ? '📝 Preparing...' : '📝 Draft Content'}
                   </button>
-                </div>
+                </div> */}
               </div>
 
               <AnalysisDisplay data={result} />

@@ -1,0 +1,88 @@
+{
+  "metadata": {
+    "version": "5.0.0",
+    "target_audience": "US Males 20-45, Low/Middle Income",
+    "tone": "Edgy, Clinical, Psychological, No-BS",
+    "logic_framework": "The 5-Point Finance Spine"
+  },
+  "database": [
+    {
+      "id": "CAT_1_THE_DIAGNOSIS",
+      "focus": "Pain & Biological Stress",
+      "mapping": [
+        { "boring_term": "Stressed about money", "killer_term": "Midnight anxiety sessions / Staring at the ceiling at 3 AM" },
+        { "boring_term": "Being poor", "killer_term": "Brain stuck in survival mode / Mental bandwidth depleted" },
+        { "boring_term": "Financial trouble", "killer_term": "Your financial house is on fire" },
+        { "boring_term": "Checking bank balance", "killer_term": "Closing the app in horror" },
+        { "boring_term": "Eating cheap food", "killer_term": "Cardboard generic pasta / Crappy airport sandwiches" },
+        { "boring_term": "Struggling to find cash", "killer_term": "Searching couch cushions for gas money" }
+      ],
+      "phrase_patterns": [
+        { "boring_phrase": "You are worried about your bills.", "killer_phrase": "You're staring at the ceiling at 3 AM, wondering where it all went wrong." },
+        { "boring_phrase": "Being broke makes it hard to think.", "killer_phrase": "Your brain is so consumed by survival-based calculations that you have zero bandwidth for growth." }
+      ]
+    },
+    {
+      "id": "CAT_2_THE_VILLAIN",
+      "focus": "The Consumerism Trap",
+      "mapping": [
+        { "boring_term": "Car loan / Debt", "killer_term": "Automotive indentured servitude / Financial hamster wheel" },
+        { "boring_term": "Expensive truck", "killer_term": "Gleaming monster with cup holders / Chrome everything" },
+        { "boring_term": "Liking your debt", "killer_term": "Automotive Stockholm Syndrome" },
+        { "boring_term": "Spending money poorly", "killer_term": "Active wealth destruction / Liquidating your future" },
+        { "boring_term": "Making excuses", "killer_term": "Performing mental gymnastics to justify it" },
+        { "boring_term": "0% Interest offer", "killer_term": "A financial horror movie disguised as a promotion" }
+      ],
+      "phrase_patterns": [
+        { "boring_phrase": "Car debt is a bad idea.", "killer_phrase": "You're defending that truck payment like it's a family member while it's actively destroying your wealth." },
+        { "boring_phrase": "Don't buy things to look rich.", "killer_phrase": "You've signed up for a life on the financial hamster wheel just to look rich to people you don't even like." }
+      ]
+    },
+    {
+      "id": "CAT_3_THE_MECHANICS",
+      "focus": "Math & Physics Metaphors",
+      "mapping": [
+        { "boring_term": "Saving money", "killer_term": "Aggressive accumulation" },
+        { "boring_term": "Compound interest", "killer_term": "Gravity / Comical acceleration" },
+        { "boring_term": "First steps", "killer_term": "Pushing the boulder / Cresting the hill" },
+        { "boring_term": "Automated growth", "killer_term": "Money doing the heavy lifting / Automatic momentum" }
+      ],
+      "phrase_patterns": [
+        { "boring_phrase": "Saving is hard at the start.", "killer_phrase": "The first $20,000 is a battle against gravity; you're pushing a heavy boulder up a steep hill." },
+        { "boring_phrase": "Growth gets faster later.", "killer_phrase": "Once you crest the hill, gravity starts working for you. The acceleration becomes almost comical." }
+      ]
+    },
+    {
+      "id": "CAT_4_THE_LEVERAGE",
+      "focus": "Power, Status & Testosterone",
+      "mapping": [
+        { "boring_term": "Emergency fund", "killer_term": "Financial oxygen / Breathing room / Safety net permission" },
+        { "boring_term": "Quit job money", "killer_term": "Walking away money / Secret superpower" },
+        { "boring_term": "Confident", "killer_term": "Assertive demeanor / Negotiating from strength" },
+        { "boring_term": "Peace of mind", "killer_term": "Eliminating decision fatigue / Signal over noise" }
+      ],
+      "phrase_patterns": [
+        { "boring_phrase": "Savings make you confident.", "killer_phrase": "With $20k in the bank, you're not just a worker; you're a man negotiating from a position of absolute strength." },
+        { "boring_phrase": "You don't have to stay at a bad job.", "killer_phrase": "You have 'Walking Away Money'. It's the superpower that makes you immune to toxic workplace dynamics." }
+      ]
+    },
+    {
+      "id": "CAT_5_THE_AUTHORITY",
+      "focus": "Truth & Proof of Work",
+      "mapping": [
+        { "boring_term": "I did research", "killer_term": "Fly out and knock on the door / Deciphering the mechanics" },
+        { "boring_term": "Facts", "killer_term": "Undeniable data / Hard evidence / No sugar-coating" },
+        { "boring_term": "I'm telling the truth", "killer_term": "Brutal reality check / Not here to hold your hand" }
+      ],
+      "phrase_patterns": [
+        { "boring_phrase": "I checked if he was real.", "killer_phrase": "I was skeptical, so I decided to fly out, knock on his door, and see the numbers for myself." },
+        { "boring_phrase": "The numbers prove I am right.", "killer_phrase": "The numbers don't lie. Vanguard research proves this single shift increases your happiness by 21%." }
+      ]
+    }
+  ],
+  "structural_rules": [
+    "90/10 Ratio: 90% simple English, 10% Killer Power Phrases.",
+    "Visual Anchoring: Every abstract concept (debt, growth) must use a physical metaphor (hamster wheel, boulder).",
+    "No Hedges: Remove 'I think', 'maybe', 'possibly'. Use absolute clinical statements."
+  ]
+}

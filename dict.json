@@ -1,0 +1,93 @@
+{
+  "project": "Ultimate Finance Script Engine",
+  "audience": "US Males 20-45, Low/Middle Income",
+  "tone": "Edgy, Clinical, Psychological, No-BS",
+  "backbone_categories": [
+    {
+      "id": "CAT_1_DIAGNOSIS",
+      "name": "The Diagnosis (Chẩn đoán nỗi đau)",
+      "logic": "Chuyển từ cảm xúc trừu tượng sang trạng thái sinh học hoặc phản xạ vật lý.",
+      "vocabulary": [
+        { "origin": "Stress", "killer": "Midnight anxiety / 3 AM ceiling staring" },
+        { "origin": "Broke", "killer": "Survival mode / Mental bandwidth depleted" },
+        { "origin": "Scared", "killer": "Closing the app in horror" },
+        { "origin": "Struggle", "killer": "Searching couch cushions for gas money" },
+        { "origin": "Cheap food", "killer": "Cardboard generic pasta / Crappy airport sandwiches" }
+      ],
+      "phrase_patterns": [
+        { "origin": "Bạn đang lo lắng về tiền.", "killer": "You're lying awake at 3 AM, staring at the ceiling, wondering where it all went wrong.", "visual": "Người đàn ông cô độc trong bóng tối." },
+        { "origin": "Nghèo làm bạn khó suy nghĩ.", "killer": "Your brain is so consumed by survival-based calculations that you have zero bandwidth for growth.", "visual": "Não bộ bị 'nghẽn mạng' vì lo ăn từng bữa." },
+        { "origin": "Tình hình đang rất tệ.", "killer": "Your financial house is on fire, and you're trying to plan a vacation.", "visual": "Sự tương phản giữa thảm họa và sự thờ ơ." }
+      ]
+    },
+    {
+      "id": "CAT_2_VILLAIN",
+      "name": "The Villain (Tấn công kẻ thù)",
+      "logic": "Nhân cách hóa đồ vật/khoản nợ thành kẻ bắt cóc hoặc quái vật tiêu thụ tương lai.",
+      "vocabulary": [
+        { "origin": "Car loan", "killer": "Automotive indentured servitude / Debt trap" },
+        { "origin": "Flashy truck", "killer": "Gleaming monster with cup holders" },
+        { "origin": "Excuses", "killer": "Mental gymnastics" },
+        { "origin": "Bad purchase", "killer": "Active wealth destruction / Future liquidation" },
+        { "origin": "Debt love", "killer": "Automotive Stockholm Syndrome" }
+      ],
+      "phrase_patterns": [
+        { "origin": "Vay mua xe là sai lầm.", "killer": "You're defending that truck payment like it's a family member while it's actively destroying your wealth.", "visual": "Sự bảo vệ mù quáng cho kẻ đang hại mình." },
+        { "origin": "Trả góp làm bạn nghèo đi.", "killer": "You've signed up for a life on the financial hamster wheel just to look rich to people you don't even like.", "visual": "Con chuột chạy điên cuồng trong lồng sắt bóng loáng." },
+        { "origin": "Đừng tin vào quảng cáo.", "killer": "It's a financial horror movie disguised as a 0% APR promotional offer.", "visual": "Cái bẫy chết người đằng sau lớp vỏ hào nhoáng." }
+      ]
+    },
+    {
+      "id": "CAT_3_MECHANICS",
+      "name": "The Mechanics (Toán học & Quy luật)",
+      "logic": "Biến số liệu khô khan thành quy luật vật lý (trọng lực, đà) không thể chối cãi.",
+      "vocabulary": [
+        { "origin": "Saving rate", "killer": "Aggressive accumulation" },
+        { "origin": "Compound interest", "killer": "Gravity / Comical acceleration" },
+        { "origin": "Initial effort", "killer": "Pushing the boulder / Cresting the hill" },
+        { "origin": "Money growth", "killer": "Heavy lifting / Automatic momentum" }
+      ],
+      "phrase_patterns": [
+        { "origin": "Lúc đầu tiết kiệm rất khó.", "killer": "The first $20,000 is a battle against gravity; you're pushing a heavy boulder up a steep hill.", "visual": "Sự căng cơ và đổ mồ hôi của giai đoạn đầu." },
+        { "origin": "Sau này tiền sẽ tự tăng.", "killer": "Once you crest the hill, gravity starts working for you. The acceleration becomes almost comical.", "visual": "Hòn đá bắt đầu tự lăn xuống dốc bên kia." },
+        { "origin": "Tiền sẽ làm việc thay bạn.", "killer": "At this threshold, your money starts doing the heavy lifting, generating more than your actual job.", "visual": "Tiền trở thành những 'lực sĩ' gánh vác thay chủ." }
+      ]
+    },
+    {
+      "id": "CAT_4_LEVERAGE",
+      "name": "The Leverage (Vị thế & Quyền lực)",
+      "logic": "Kết nối số dư tiền mặt với testosterone, sự tự tôn và khả năng đàm phán.",
+      "vocabulary": [
+        { "origin": "Safety net", "killer": "Financial oxygen / Breathing room" },
+        { "origin": "Quit job money", "killer": "Walking away money / Secret superpower" },
+        { "origin": "Confident", "killer": "Assertive demeanor / Position of strength" },
+        { "origin": "Calm", "killer": "Eliminating decision fatigue / Signal over noise" }
+      ],
+      "phrase_patterns": [
+        { "origin": "Có tiền bạn sẽ tự tin hơn.", "killer": "With $20k in the bank, you’re not just a worker; you’re a man negotiating from a position of absolute strength.", "visual": "Ánh mắt tự tin và tư thế ngồi vững chãi." },
+        { "origin": "Tiền giúp bạn an tâm.", "killer": "This isn't just savings; it's financial oxygen. It gives you the breathing room to stop playing defense.", "visual": "Cảm giác hít thở sâu sau khi bị ngạt nước." },
+        { "origin": "Bạn không còn sợ sếp.", "killer": "You have 'Walking Away Money'. It's the superpower that makes you immune to toxic workplace dynamics.", "visual": "Tấm khiên bảo vệ khỏi sự áp bức." }
+      ]
+    },
+    {
+      "id": "CAT_5_AUTHORITY",
+      "name": "The Authority (Xác thực & Uy tín)",
+      "logic": "Chứng minh sự thật bằng hành động vật lý quyết liệt (Proof of Work).",
+      "vocabulary": [
+        { "origin": "Research", "killer": "Fly out and knock on the door / Deep dive" },
+        { "origin": "Proof", "killer": "Hard evidence / Deciphering the mechanics" },
+        { "origin": "Honesty", "killer": "Brutal reality check / No sugar-coating" }
+      ],
+      "phrase_patterns": [
+        { "origin": "Tôi đã đi tìm sự thật.", "killer": "I was skeptical, so I decided to fly out, knock on his door, and see the numbers for myself.", "visual": "Hành động vật lý quyết liệt (Bay, Gõ cửa)." },
+        { "origin": "Đây là sự thật phũ phàng.", "killer": "I'm not here to sugar-coat this; if you keep this mindset, you're a captive audience for your own failure.", "visual": "Cú tát vào mặt để tỉnh ngộ." },
+        { "origin": "Số liệu chứng minh điều đó.", "killer": "The data is undeniable. Vanguard research shows this single shift increases well-being by 21%.", "visual": "Dấu mộc 'Đã kiểm chứng' trên số liệu." }
+      ]
+    }
+  ],
+  "structural_rules": [
+    "90% Simple/Relatable English vs 10% Killer Power Terms",
+    "Use visual metaphors (Boulder, Fire, Oxygen) for every abstract concept",
+    "Focus on Power/Strength/Leverage for the male audience"
+  ]
+}

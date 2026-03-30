@@ -30,26 +30,110 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const systemPrompt = `You are an elite YouTube script architect. Create an actionable 20-minute video script structure and hook set based on analysis data. Return JSON only.`;
+    const systemPrompt = `
+You are an elite YouTube script architect AND content quality editor.
 
-    const userPrompt = `Create a detailed 20-minute script outline and hook suggestions based on this analysis result object:
+Your job:
+1. Generate structured script sections
+2. Detect generic/AI-like phrasing
+3. Suggest better alternatives WITHOUT rewriting the whole script
+
+Return JSON only.
+`;
+
+const userPrompt = `
+Create a detailed 20-minute YouTube script structure AND content refinement suggestions based on this analysis:
 
 ${JSON.stringify(analysis, null, 2)}
 
-Requirements:
-1) Provide a timeline sections array with 8 parts (hook, setup, story, reveal, value, actions, proof, CTA).
-2) Each section includes a brief narration text (30-60 words) and key bullets.
-3) Generate 6 hook options (2x pattern interrupt, 2x curiosity gap, 2x emotional) suited to this content.
-4) Suggest one chosen hook by default.
-5) Keep content aligned to coreInsight, structureDNA, hookBreakdown, and contentOpportunities.
+=== REQUIREMENTS ===
 
-Return exactly this JSON structure:
+1) SCRIPT STRUCTURE
+Provide 8 sections:
+- Hook
+- Setup
+- Story
+- Reveal
+- Value
+- Actions
+- Proof
+- CTA
+
+Each section must include:
+- narration (30–60 words, natural but NOT overly polished)
+- key bullets (2–4 bullets)
+
+---
+
+2) HOOK OPTIONS
+Generate 6 hooks:
+- 2 pattern interrupt
+- 2 curiosity gap
+- 2 emotional
+
+Also:
+- Select 1 best hook (chosenHook)
+
+---
+
+3) GENERIC DETECTION + SUGGESTIONS (VERY IMPORTANT)
+
+For EACH section narration:
+
+- Identify phrases that sound:
+  - generic
+  - overly formal
+  - AI-like
+  - low-emotion
+  - vague
+
+- DO NOT rewrite the whole narration
+
+Instead return:
+- problematicPhrases: array of exact phrases
+- reasons: why each phrase is weak
+- suggestions: 2–3 alternative ways to say EACH phrase
+
+Guidelines for suggestions:
+- more conversational
+- more direct
+- more emotional
+- more “spoken language”
+- may include light personality or edge
+
+---
+
+4) STYLE RULES
+
+- Avoid corporate tone
+- Avoid clichés
+- Use “you” when possible
+- Slightly imperfect, natural spoken rhythm
+
+---
+
+=== OUTPUT FORMAT ===
+
 {
   "scriptStructure": [
-    { "time": "0:00-0:30", "section": "Hook", "narration": "...", "bullets": ["...", "..."] },
-    ...
+    {
+      "time": "0:00-0:30",
+      "section": "Hook",
+      "narration": "...",
+      "bullets": ["...", "..."],
+      "improvement": {
+        "problematicPhrases": ["..."],
+        "reasons": ["..."],
+        "suggestions": [
+          {
+            "original": "...",
+            "alternatives": ["...", "...", "..."]
+          }
+        ]
+      }
+    }
   ],
-  "hooks": ["...", "...", ...],
+  "hooks": ["...", "..."],
   "chosenHook": "..."
 }
 `;

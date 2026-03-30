@@ -3,6 +3,42 @@
 -- Run this once in your Supabase project → SQL Editor
 -- ============================================================
 
+-- Table for storing Reddit idea analysis
+create table if not exists reddit_ideas (
+  id          uuid primary key default gen_random_uuid(),
+  created_at  timestamptz not null default now(),
+
+  -- Reddit post URL (unique to prevent duplicates)
+  url         text not null unique,
+
+  -- Raw Reddit data (post title, self-text, top 10 comments)
+  reddit_data jsonb,
+
+  -- The AI analysis output (viral DNA)
+  analysis    jsonb not null,
+
+  -- Status: analyzed, processing, failed
+  status      text default 'analyzed'
+);
+
+-- Index for URL lookup
+create index if not exists reddit_ideas_url_idx on reddit_ideas (url);
+
+-- Index for chronological listing
+create index if not exists reddit_ideas_created_at_idx on reddit_ideas (created_at desc);
+
+-- RLS for reddit_ideas
+alter table reddit_ideas enable row level security;
+
+create policy "Allow anon select" on reddit_ideas
+  for select using (true);
+
+create policy "Allow anon insert" on reddit_ideas
+  for insert with check (true);
+
+create policy "Allow anon delete" on reddit_ideas
+  for delete using (true);
+
 create table if not exists analyses (
   id          uuid primary key default gen_random_uuid(),
   created_at  timestamptz not null default now(),

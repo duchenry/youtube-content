@@ -88,3 +88,44 @@ export interface AnalysisResult {
     closings: string[];
   };
 }
+
+export interface RedditIdea {
+  hardTruth: {
+    theParadox: string;
+    theSelfDeception: string;
+    theBrutalReality: string;
+    thePivot: string;
+  };
+  theHook: {
+    shockingHeadline: string;
+    visualTrigger: string;
+    psychologicalHook: string;
+  };
+  viralAngles: Array<{
+    name: string;
+    gimmick: string;
+    egoTrigger: string;
+  }>;
+  vocabulary: {
+    powerSlang: string[];
+    physicalMetaphors: string[];
+    innerMonologue: string[];
+  };
+  painPoints: Array<{
+    scenario: string;
+    internalFeeling: string;
+  }>;
+  label?: string;
+  notes?: string;
+}
+
+export interface RedditPostData {
+  title: string;
+  selfText: string;
+  upvotes: number;
+  comments: Array<{
+    author: string;
+    text: string;
+    upvotes: number;
+  }>;
+}

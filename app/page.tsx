@@ -15,16 +15,9 @@ const SCRIPT_PLACEHOLDER = `Paste your YouTube script here...
 Example:
 "Most people think success is about working harder. They're wrong. I spent 3 years grinding 16-hour days and got nowhere. Then I discovered the one thing nobody talks about..."`;
 
-const COMMENTS_PLACEHOLDER = `Paste viewer comments here (optional)...
-
-Example:
-"This changed my perspective completely"
-"I've been doing this wrong my whole life"
-"Finally someone said it"`;
-
 export default function Home() {
   const [script, setScript] = useState("");
-  const [comments, setComments] = useState("");
+  const [comments, setComments] = useState<string[]>(Array(7).fill(""));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -58,7 +51,7 @@ export default function Home() {
 
   const slug = useMemo(() => {
     if (!result) return "";
-    const base = result.coreInsight?.summary || script.slice(0, 80) || "draft-script";
+    const base = result.coreTruth?.insight || script.slice(0, 80) || "draft-script";
     const normalized = textToSlug(base);
     return normalized || `draft-${Date.now()}`;
   }, [result, script]);
@@ -85,7 +78,7 @@ export default function Home() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ script, comments }),
+        body: JSON.stringify({ script, comments: comments.filter(c => c.trim()) }),
       });
 
       const json = await res.json();
@@ -118,7 +111,10 @@ export default function Home() {
     setResult(entry.result);
     setActiveId(entry.id);
     setScript(entry.script_preview);
-    setComments(entry.comments || "");
+    const commentsArray = entry.comments
+      ? entry.comments.split("\n").filter(c => c.trim()).slice(0, 7)
+      : [];
+    setComments([...commentsArray, ...Array(7 - commentsArray.length).fill("")]);
     setError(null);
     setSaveError(null);
     setTimeout(() => {
@@ -128,7 +124,7 @@ export default function Home() {
 
   function handleNew() {
     setScript("");
-    setComments("");
+    setComments(Array(7).fill(""));
     setResult(null);
     setActiveId(null);
     setError(null);
@@ -235,23 +231,32 @@ export default function Home() {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   <label className="text-white text-sm font-semibold flex items-center gap-1.5">
                     Viewer Comments
                     <span className="tag-pill bg-[#1a1a1a] text-[#444] normal-case font-normal ml-1">
-                      optional
+                      optional · max 7
                     </span>
                   </label>
                 </div>
-                <textarea
-                  value={comments}
-                  onChange={(e) => setComments(e.target.value)}
-                  placeholder={COMMENTS_PLACEHOLDER}
-                  rows={5}
-                  className="w-full bg-[#111] border border-[#1e1e1e] rounded-xl px-4 py-3
-                             text-[#ccc] text-sm placeholder:text-[#2a2a2a] resize-y
-                             transition-all focus:border-[#ff2d20]/40 font-body leading-relaxed"
-                />
+                <div className="space-y-2">
+                  {comments.map((comment, idx) => (
+                    <textarea
+                      key={idx}
+                      value={comment}
+                      onChange={(e) => {
+                        const newComments = [...comments];
+                        newComments[idx] = e.target.value;
+                        setComments(newComments);
+                      }}
+                      placeholder={`Comment ${idx + 1} (optional) - e.g., "This changed my perspective completely"`}
+                      rows={2}
+                      className="w-full bg-[#111] border border-[#1e1e1e] rounded-lg px-3 py-2
+                                 text-[#ccc] text-sm placeholder:text-[#2a2a2a] resize-y
+                                 transition-all focus:border-[#ff2d20]/40 font-body leading-relaxed"
+                    />
+                  ))}
+                </div>
               </div>
 
               {error && (

@@ -1,92 +1,124 @@
 export interface AnalysisResult {
-  coreInsight: {
-    summary: string;
+  // STEP 1: Core extraction
+  coreTruth: {
+    insight: string;
+    trigger: string;
   };
-  coreAngle: {
-    uniqueAngle: string;
-    beliefChallenged: string;
-    whyItWorks: string;
+  attention: {
+    patternBreak: {
+      whatFeelsDifferent: string;
+      whyItGrabs: string;
+    };
+    escalation: string;
+    retention: string;
   };
-  angleExpansion: Array<{
-    name: string;
-    explanation: string;
-    emotionalTrigger: string;
-  }>;
-  keywordAnalysis: {
-    repeatedKeywords: string[];
-    emotionalWords: string[];
-    powerWords: string[];
-    simplePhrasing: string[];
-    psychologicalExplanation: string;
+  persuasion: {
+    beliefDestroyed: string;
+    beliefInstalled: string;
   };
-  hookBreakdown: {
-    patternInterrupt: string;
-    curiosityGap: string;
-    emotionalTrigger: string;
-    newHooks: string[];
+  structure: {
+    hookMechanism: string;
+    revealMoment: string;
+    payoff: string;
   };
-  structureDNA: {
-    hook: string;
-    setup: string;
-    contrastStory: string;
-    insightReveal: string;
-    valueDelivery: string;
-    actionConclusion: string;
+
+  financialReality?: {
+    numbersUsed: string;
+    perceptionEffect: string;
+    manipulation: string;
   };
-  audienceProfile: {
-    idealViewer: string;
-    ageRange: string;
-    incomeLevel: string;
-    lifeStage: string;
-    situation: string;
+
+  structureDNA?: {
+    phases: Array<{
+      phase: string;
+      timeRange: string;
+      goal: string;
+      tactic: string;
+      viewerState: string;
+    }>;
+    transitions: Array<{
+      from: string;
+      to: string;
+      method: string;
+      lineExample: string;
+    }>;
+    retentionMoments: Array<{
+      moment: string;
+      whyItWorks: string;
+      pattern: string;
+    }>;
+  };
+
+  // STEP 2: Audience psychology
+  viewer: {
+    profile: string;
+    externalMask: string;
+    internalFear: string;
+    triggerMoment: string;
+  };
+  egoThreat: {
+    whatHurts: string;
+    comparison: string;
+    privateTruth: string;
   };
   painMap: Array<{
     pain: string;
-    explanation: string;
-    realLifeExample: string;
+    feeling: string;
+    realScenario: string;
   }>;
-  commentMining: Array<{
-    theme: string;
-    examplePhrases: string[];
-    psychologicalMeaning: string;
-  }>;
-  desireMap: {
-    whatTheyWant: string;
-    emotionalStateChasing: string;
+  desire: {
+    surface: string;
+    real: string;
+    identityShift: string;
   };
-  contentOpportunities: Array<{
+
+  // STEP 2.5: Differentiation (optional)
+  differentiation?: {
+    povMode: 'anti-system' | 'balanced' | 'strategic';
+    agreement: string;
+    destruction: string[];
+    newPOV: {
+      core: string;
+      edge: string;
+    };
+    truthFilter: {
+      fakeGood: string;
+      realTruth: string;
+    };
+  };
+
+  // STEP 3A: Idea engine
+  angles: Array<{
+    type: string;
+    idea: string;
+    whyItWorks: string;
+  }>;
+  contentIdeas: Array<{
     title: string;
-    targetPain: string;
-    desiredOutcome: string;
-    uniqueAngle: string;
-    hook: string;
+    angle: string;
+    coreConflict: string;
   }>;
-  differentiationStrategy: {
-    tone: string;
-    structure: string;
-    storytelling: string;
-    perspective: string;
-  };
-  viralRiskAnalysis: {
-    massProducedRisk: string;
-    inauthenticSignals: string;
-    howToFix: string;
-  };
-  contentGapAnalysis: {
-    missingElements: string;
-    unansweredQuestions: string;
-    underexploredAngles: string;
-    gapBasedVideoIdeas: Array<{ title: string; gap: string }>;
-  };
-  formatVariations: Array<{
-    format: string;
-    description: string;
-    viewerExperience: string;
+
+  // STEP 3B: Execution
+  hooks: Array<{
+    type: string;
+    text: string;
   }>;
-  scriptStarters: {
-    openings: Array<{ tone: string; text: string }>;
-    closings: string[];
+  script: {
+    opening: string;
+    closing: string;
   };
+  antiAI: {
+    avoid: string[];
+    fix: string;
+  };
+  risk: {
+    whyFeelsAI: string;
+    fix: string;
+  };
+
+  // Optional input metadata
+  inputComments?: string[];
 }
 
 export interface RedditIdea {

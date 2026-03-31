@@ -65,16 +65,19 @@ export function useHistory() {
   const saveAnalysis = useCallback(
     async (
       script: string,
-      comments: string,
+      comments: string[],
       result: AnalysisResult
     ): Promise<string | null> => {
       const script_preview = script.trim().slice(0, 200);
       const title =
-        result.coreInsight?.summary?.slice(0, 80) || script_preview.slice(0, 80);
+        result.coreTruth?.insight?.slice(0, 80) || script_preview.slice(0, 80);
 
       const baseSlug =
-        result.coreInsight?.summary || script_preview || "draft-script";
+        result.coreTruth?.insight || script_preview || "draft-script";
       const slug = textToSlug(baseSlug) || `draft-${Date.now()}`;
+
+      // Convert comments array to newline-separated string for storage
+      const commentsStr = comments.filter(c => c.trim()).join("\n") || null;
 
       let data = null;
       let error = null;
@@ -83,7 +86,7 @@ export function useHistory() {
         .from("analyses")
         .insert({
           script_preview,
-          comments: comments.trim() || null,
+          comments: commentsStr,
           result,
           title,
           slug,
@@ -103,7 +106,7 @@ export function useHistory() {
           .from("analyses")
           .insert({
             script_preview,
-            comments: comments.trim() || null,
+            comments: commentsStr,
             result,
             title,
           })
@@ -122,7 +125,7 @@ export function useHistory() {
           id: data?.id,
           created_at: new Date().toISOString(),
           script_preview,
-          comments: comments.trim() || null,
+          comments: commentsStr,
           result,
           title,
           slug,
@@ -180,7 +183,7 @@ export function useHistory() {
 
     const match = (allData as HistoryEntry[]).find((item) => {
       if (item.slug) return item.slug === slug;
-      const generatedSlug = textToSlug(item.result?.coreInsight?.summary || "");
+      const generatedSlug = textToSlug(item.result?.coreTruth?.insight || "");
       return generatedSlug === slug;
     });
 
@@ -190,7 +193,7 @@ export function useHistory() {
 
     return {
       ...match,
-      slug: match.slug || textToSlug(match.result?.coreInsight?.summary || ""),
+      slug: match.slug || textToSlug(match.result?.coreTruth?.insight || ""),
     };
   }, []);
 

@@ -73,8 +73,73 @@ export function AnalysisDisplay({ data }: Props) {
   const [activeStep1Sub, setActiveStep1Sub] = useState('coreTruth');
   const [activeStep2Sub, setActiveStep2Sub] = useState('viewer');
   const [activeStep3Sub, setActiveStep3Sub] = useState('angles');
+  const [selectedHookIndex, setSelectedHookIndex] = useState<number | null>(null);
+  const [openingLoading, setOpeningLoading] = useState(false);
+  const [openingError, setOpeningError] = useState<string | null>(null);
+  const [generatedOpening, setGeneratedOpening] = useState<{
+    hook: string;
+    bridge: string;
+    fullOpening: string;
+    whyItWorks: string;
+    riskLevel: string;
+    riskWhy: string;
+    softVersion: string;
+  } | null>(null);
+
+  const effectiveOpening = generatedOpening?.fullOpening || data.script?.opening || '';
+
+  async function handleGenerateOpening() {
+    if (selectedHookIndex === null) {
+      setOpeningError('Please select a hook first.');
+      return;
+    }
+
+    setOpeningError(null);
+    setOpeningLoading(true);
+
+    try {
+      const res = await fetch('/api/opening', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          analysis: data,
+          selectedHookIndex,
+          platform: 'youtube-long',
+          creatorVoice: '',
+          targetViewer: data.viewer?.profile || '',
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        throw new Error(json.error || 'Failed to generate opening.');
+      }
+
+      setGeneratedOpening({
+        hook: normalizeText(json.opening?.hook),
+        bridge: normalizeText(json.opening?.bridge),
+        fullOpening: normalizeText(json.opening?.fullOpening),
+        whyItWorks: normalizeText(json.opening?.whyItWorks),
+        riskLevel: normalizeText(json.riskCheck?.riskLevel),
+        riskWhy: normalizeText(json.riskCheck?.why),
+        softVersion: normalizeText(json.riskCheck?.softVersion),
+      });
+      setActiveStep3Sub('script');
+    } catch (err) {
+      setOpeningError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+    } finally {
+      setOpeningLoading(false);
+    }
+  }
 
   const exportToCSV = () => {
+    const selectedHook =
+      selectedHookIndex !== null && data.hooks?.[selectedHookIndex]
+        ? data.hooks[selectedHookIndex]
+        : null;
+    const effectiveHookText = generatedOpening?.hook || selectedHook?.text || '';
+    const effectiveBridge = generatedOpening?.bridge || selectedHook?.bridge || '';
+
     const rows: string[][] = [];
     rows.push(['Section', 'Field', 'Value']);
 
@@ -105,6 +170,13 @@ export function AnalysisDisplay({ data }: Props) {
       rows.push(['Financial Reality', 'Numbers Used', data.financialReality.numbersUsed || '']);
       rows.push(['Financial Reality', 'Perception Effect', data.financialReality.perceptionEffect || '']);
       rows.push(['Financial Reality', 'Manipulation', data.financialReality.manipulation || '']);
+    }
+
+    if (data.proofMechanics) {
+      rows.push(['Proof Mechanics', 'Evidence Used', data.proofMechanics.evidenceUsed || '']);
+      rows.push(['Proof Mechanics', 'Perception Effect', data.proofMechanics.perceptionEffect || '']);
+      rows.push(['Proof Mechanics', 'Framing', data.proofMechanics.framing || '']);
+      rows.push(['Proof Mechanics', 'Transferable Pattern', data.proofMechanics.transferablePattern || '']);
     }
 
     if (data.structureDNA) {
@@ -187,11 +259,21 @@ export function AnalysisDisplay({ data }: Props) {
       data.hooks.forEach((hook, i) => {
         rows.push([`Hook ${i + 1}`, 'Type', hook.type || '']);
         rows.push([`Hook ${i + 1}`, 'Text', hook.text || '']);
+        rows.push([`Hook ${i + 1}`, 'Risk Level', hook.riskLevel || '']);
+        rows.push([`Hook ${i + 1}`, 'Why Risky', hook.whyRisky || '']);
+        rows.push([`Hook ${i + 1}`, 'Bridge', hook.bridge || '']);
       });
     }
 
     if (data.script) {
-      rows.push(['Script', 'Opening', data.script.opening || '']);
+      rows.push(['Script', 'Key Turn Line', data.script.keyTurnLine || '']);
+      rows.push(['Script', 'Opening', effectiveOpening || '']);
+      rows.push(['Script', 'Hook (Selected)', effectiveHookText]);
+      rows.push(['Script', 'Bridge', effectiveBridge]);
+      rows.push(['Script', 'Why It Works', generatedOpening?.whyItWorks || '']);
+      rows.push(['Script', 'Opening Risk Level', generatedOpening?.riskLevel || '']);
+      rows.push(['Script', 'Risk Note', generatedOpening?.riskWhy || '']);
+      rows.push(['Script', 'Safer Version', generatedOpening?.softVersion || '']);
       rows.push(['Script', 'Closing', data.script.closing || '']);
     }
 
@@ -214,7 +296,6 @@ export function AnalysisDisplay({ data }: Props) {
     link.download = 'youtube-analysis-data.csv';
     link.click();
   };
-
   return (
     <div className="space-y-6">
       {/* Export Button */}
@@ -345,6 +426,7 @@ export function AnalysisDisplay({ data }: Props) {
                   <FieldRow label="Numbers Used" value={data.financialReality?.numbersUsed} />
                   <FieldRow label="Perception Effect" value={data.financialReality?.perceptionEffect} />
                   <FieldRow label="Manipulation" value={data.financialReality?.manipulation} />
+                  <FieldRow label="Transferable Pattern" value={data.proofMechanics?.transferablePattern} />
                 </div>
               )}
 
@@ -565,21 +647,84 @@ export function AnalysisDisplay({ data }: Props) {
 
               {activeStep3Sub === 'hooks' && (
                 <div className="space-y-4">
-                  <h3 className="text-white font-semibold text-lg mb-4">Hooks</h3>
+                  <h3 className="text-white font-semibold text-lg mb-2">Hooks</h3>
+                  <p className="text-[#777] text-sm mb-4">
+                    Step 1: choose one hook. Step 2: generate opening from selected hook.
+                  </p>
                   {data.hooks?.map((hook, i) => (
-                    <div key={i} className="bg-[#111] p-3 rounded border border-[#222]">
+                    <div
+                      key={i}
+                      className={`bg-[#111] p-3 rounded border ${
+                        selectedHookIndex === i ? 'border-blue-500' : 'border-[#222]'
+                      }`}
+                    >
                       <p className="text-[#888] text-xs font-semibold uppercase mb-1">Hook {i + 1}: {hook.type}</p>
-                      <p className="text-[#ddd] text-sm">{hook.text}</p>
+                      <p className="text-[#ddd] text-sm mb-2">{hook.text}</p>
+                      <button
+                        onClick={() => {
+                          setSelectedHookIndex(i);
+                          setOpeningError(null);
+                        }}
+                        className={`mb-3 px-3 py-1.5 rounded text-xs font-semibold transition-all ${
+                          selectedHookIndex === i
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-[#1b1b1b] text-[#bbb] hover:bg-[#262626]'
+                        }`}
+                      >
+                        {selectedHookIndex === i ? 'Selected Hook' : 'Select This Hook'}
+                      </button>
+                      <FieldRow label="Risk Level" value={hook.riskLevel} />
+                      <FieldRow label="Why Risky" value={hook.whyRisky} />
+                      <FieldRow label="Bridge" value={hook.bridge} />
                     </div>
                   ))}
+
+                  <div className="pt-2">
+                    <button
+                      onClick={handleGenerateOpening}
+                      disabled={openingLoading || selectedHookIndex === null}
+                      className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 disabled:bg-[#2a2a2a] disabled:text-[#666] text-white text-sm font-semibold transition-all"
+                    >
+                      {openingLoading ? 'Generating Opening...' : 'Generate Opening From Selected Hook'}
+                    </button>
+                  </div>
+
+                  {openingError && (
+                    <div className="bg-red-900/20 border border-red-900/40 rounded-lg px-3 py-2 text-red-400 text-sm">
+                      {openingError}
+                    </div>
+                  )}
                 </div>
               )}
 
               {activeStep3Sub === 'script' && (
                 <div className="space-y-4">
                   <h3 className="text-white font-semibold text-lg mb-4">Script</h3>
-                  <FieldRow label="Opening" value={data.script?.opening} />
+                  <FieldRow label="Key Turn Line" value={data.script?.keyTurnLine} />
+                  <FieldRow label="Opening" value={effectiveOpening} />
+                  <FieldRow label="Hook (Selected)" value={generatedOpening?.hook} />
+                  <FieldRow label="Bridge" value={generatedOpening?.bridge} />
+                  <FieldRow label="Why It Works" value={generatedOpening?.whyItWorks} />
+                  <FieldRow label="Opening Risk Level" value={generatedOpening?.riskLevel} />
+                  <FieldRow label="Risk Note" value={generatedOpening?.riskWhy} />
+                  <FieldRow label="Safer Version" value={generatedOpening?.softVersion} />
                   <FieldRow label="Closing" value={data.script?.closing} />
+
+                  <div className="pt-2">
+                    <button
+                      onClick={handleGenerateOpening}
+                      disabled={openingLoading || selectedHookIndex === null}
+                      className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 disabled:bg-[#2a2a2a] disabled:text-[#666] text-white text-sm font-semibold transition-all"
+                    >
+                      {openingLoading ? 'Regenerating Opening...' : 'Regenerate Opening With Selected Hook'}
+                    </button>
+                  </div>
+
+                  {selectedHookIndex === null && (
+                    <p className="text-[#777] text-sm">
+                      No hook selected yet. Go to Hooks tab, select one, then generate opening.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -610,7 +755,7 @@ export function AnalysisDisplay({ data }: Props) {
         )}
       </div>
       {/* INPUT COMMENTS - ALWAYS SHOW */}
-      <div className="bg-[#111] border border-[#222] rounded-lg p-4">
+      {/* <div className="bg-[#111] border border-[#222] rounded-lg p-4">
         <h3 className="text-white text-sm font-semibold uppercase tracking-wider mb-3">💬 Input Comments</h3>
         {data.inputComments && data.inputComments.length > 0 ? (
           <div className="space-y-2">
@@ -624,7 +769,7 @@ export function AnalysisDisplay({ data }: Props) {
         ) : (
           <p className="text-[#666] text-sm italic">No comments provided</p>
         )}
-      </div>
+      </div> */}
     </div>
   );
 }

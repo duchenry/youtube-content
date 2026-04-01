@@ -15,6 +15,61 @@ export interface HistoryEntry {
   slug: string | null;
 }
 
+function normalizeLegacyAnalysis(result: AnalysisResult): AnalysisResult {
+  const proof = result.proofMechanics;
+  const financial = result.financialReality;
+
+  const numbersUsed =
+    financial?.numbersUsed?.trim() ||
+    proof?.evidenceUsed?.trim() ||
+    "Not explicitly stated in source; evidence is implied more than quantified.";
+
+  const perceptionEffect =
+    financial?.perceptionEffect?.trim() ||
+    proof?.perceptionEffect?.trim() ||
+    "Makes the claim feel plausible through confident framing and selective proof.";
+
+  const manipulation =
+    financial?.manipulation?.trim() ||
+    proof?.framing?.trim() ||
+    "Uses sequencing and contrast framing to make the new belief feel inevitable.";
+
+  const transferablePattern =
+    proof?.transferablePattern?.trim() ||
+    manipulation;
+
+  const normalizedHooks = (result.hooks ?? []).map((hook) => ({
+    ...hook,
+    riskLevel: hook.riskLevel || "",
+    whyRisky: hook.whyRisky || "",
+    bridge: hook.bridge || "",
+  }));
+
+  const script = result.script || { closing: "" };
+  const normalizedKeyTurnLine = script.keyTurnLine?.trim() || script.opening?.trim() || "";
+
+  return {
+    ...result,
+    financialReality: {
+      numbersUsed,
+      perceptionEffect,
+      manipulation,
+    },
+    proofMechanics: {
+      evidenceUsed: numbersUsed,
+      perceptionEffect,
+      framing: manipulation,
+      transferablePattern,
+    },
+    hooks: normalizedHooks,
+    script: {
+      keyTurnLine: normalizedKeyTurnLine,
+      opening: script.opening || normalizedKeyTurnLine,
+      closing: script.closing || "",
+    },
+  };
+}
+
 export function useHistory() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +105,7 @@ export function useHistory() {
       setHistory(
         (data as Array<Partial<HistoryEntry>>).map((item) => ({
           ...item,
+          result: normalizeLegacyAnalysis((item.result || {}) as AnalysisResult),
           slug: item.slug || null,
         })) as HistoryEntry[]
       );
@@ -126,7 +182,7 @@ export function useHistory() {
           created_at: new Date().toISOString(),
           script_preview,
           comments: commentsStr,
-          result,
+          result: normalizeLegacyAnalysis(result),
           title,
           slug,
         },
@@ -168,6 +224,7 @@ export function useHistory() {
     if (data) {
       return {
         ...data,
+        result: normalizeLegacyAnalysis((data as any).result as AnalysisResult),
         slug: (data as any).slug || null,
       } as HistoryEntry;
     }
@@ -193,6 +250,7 @@ export function useHistory() {
 
     return {
       ...match,
+      result: normalizeLegacyAnalysis(match.result),
       slug: match.slug || textToSlug(match.result?.coreTruth?.insight || ""),
     };
   }, []);

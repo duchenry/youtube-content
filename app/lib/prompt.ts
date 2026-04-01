@@ -1,25 +1,28 @@
 /**
- * ELITE YOUTUBE ANALYSIS SYSTEM v2
+ * ELITE YOUTUBE ANALYSIS SYSTEM v3
  * ─────────────────────────────────
- * WHAT CHANGED vs v1 — READ BEFORE USING:
+ * WHAT CHANGED vs v2 — READ BEFORE USING:
  *
- * [FIX 1] INPUT CONTRACT added — platform, niche, creator voice collected upfront
- *         so all downstream outputs are context-aware, not generic.
+ * [FIX 1] STEP 3B — Hook + Bridge now paired.
+ *         Each of the 5 hooks gets its own bridge (15–20s script).
+ *         No more 1 generic opening that can't be matched to a specific hook.
  *
- * [FIX 2] STEP 1 — financialReality renamed → proofMechanics (works for any niche,
- *         not just finance). Connected to Step 3A/3B via {{PROOF_ANCHORS}} injection.
+ * [FIX 2] STEP 3B — Hook placeholder bug fixed.
+ *         Hook 1 was outputting the instruction text as its value.
+ *         Added hard rule: "Write actual hook text. No placeholders. No meta-instructions."
  *
- * [FIX 3] STEP 2.5 — Differentiation now explicitly writes POV *for the viewer*,
- *         not as strategic memo. Destruction points must use viewer language.
+ * [FIX 3] STEP 3B — Platform note terminology corrected.
+ *         "hook can be 20–30s" was wrong. Hook = 1–2 sentences / 3–10s.
+ *         Bridge = 15–20s follow-through. Total opening ≈ 25–30s.
  *
- * [FIX 4] STEP 3A — contentIdeas rule forces 1 of 3 ideas to transfer the pattern
- *         to a *different* topic — breaking out of original video's subject.
+ * [FIX 4] STEP 1 — proofMechanics inline comment added.
+ *         CSV was still outputting "Financial Reality" because the rename
+ *         from v1 was only in the changelog, not in the schema itself.
+ *         Now clearly labeled inside the JSON template.
  *
- * [FIX 5] STEP 3B — script.opening and script.closing are now *actual written content*
- *         with character limits. JSON placeholders removed.
- *         "risky" hooks now defined: must be rejected by a cautious editor.
- *
- * [FIX 6] STEP 3B — added platform-specific formatting guidance fed from INPUT CONTRACT.
+ * [FIX 5] STEP 3A — contentIdeas[2] placeholder rule enforced.
+ *         Title field was outputting the instruction text verbatim.
+ *         Added hard rule: title must be a real publishable title.
  */
 
 
@@ -37,7 +40,7 @@
  * topComments:  [paste 3–4 top comments here]
  */
 export const INPUT_CONTRACT = {
-  platform: "",
+  platform: "youtube-long",
   niche: "",
   creatorVoice: "",
   targetViewer: "",
@@ -143,6 +146,8 @@ QUALITY CHECK before output:
 - At least 1 field must make the reader slightly uncomfortable
 - proofMechanics.transferablePattern must be topic-agnostic (usable in a completely different niche)
 - No two fields should say the same thing from different angles
+- Never output empty strings for proofMechanics fields; if evidence is weak, explicitly state "Not explicitly stated in source" then infer the likely mechanism from wording/sequence
+- Output field name must be "proofMechanics" — never "financialReality" or any other label
 `;
 
 
@@ -279,7 +284,7 @@ Return ONLY valid JSON. No preamble, no markdown fences, no commentary.
       "coreConflict": ""
     },
     {
-      "title": "TRANSFER IDEA — same proof mechanic ({{STEP_1.proofMechanics.transferablePattern}}) applied to a DIFFERENT topic outside this niche",
+      "title": "A real publishable title applying the same proof mechanic to a DIFFERENT topic outside this niche",
       "angle": "",
       "coreConflict": "Must show how the structure travels — not the same subject matter"
     }
@@ -293,7 +298,18 @@ CREATOR VOICE RULES:
 - Each angle must sound like spoken language — if it reads like an article headline, rewrite it
 - No two angles should create the same emotional response
 - contentIdeas must reuse {{STEP_1.proofMechanics.transferablePattern}} even if topic changes
+- contentIdeas[2].title MUST be an actual publishable video title — not a description, not a placeholder, not a meta-instruction
 - If it sounds safe, it's wrong
+
+ANGLE GENERATION RULE (CRITICAL):
+- Generate 3-5 candidate angles that are DISTINCT options.
+- Angles are alternatives, not directions to combine.
+- Do NOT blend angles together.
+- Do NOT create overlapping or similar angles.
+- Each angle must stand alone as a full-video core direction.
+
+At the end of the angles section, include this exact sentence in one angle's whyItWorks field:
+"Only ONE angle will be selected and used as the CORE ANGLE for the video."
 `;
 
 
@@ -313,9 +329,18 @@ CONTEXT:
 - Proof mechanic to anchor script: {{STEP_1.proofMechanics.evidenceUsed}}
 
 Platform formatting note:
-- youtube-long: hook can be 20–30s, script is conversational, closing can reference CTA
-- youtube-short / reels / tiktok: hook must land in 3s, no buildup, close with a punch
-- linkedin / twitter: hook is the first line only, no spoken-word rhythm needed
+- youtube-long:
+  hook = 1–2 sentences, 3–10s — single sharp statement that stops the scroll
+- youtube-short / reels / tiktok:
+    hook must land in 3s — one sentence, no buildup
+- linkedin / twitter:
+  hook is the first line only — no spoken-word rhythm needed
+
+IMPORTANT WORKFLOW:
+- This step is HOOK GENERATION ONLY.
+- Do NOT write opening scripts or bridges yet.
+- The user will pick one hook first, then a separate AI step writes the opening.
+- Respect the chosen CORE ANGLE from Step 3A and do not drift to another angle.
 
 Return ONLY valid JSON. No preamble, no markdown fences, no commentary.
 
@@ -323,44 +348,104 @@ Return ONLY valid JSON. No preamble, no markdown fences, no commentary.
   "hooks": [
     {
       "type": "pattern interrupt",
-      "text": "Written for {{INPUT.platform}} — must make someone stop mid-scroll",
+      "text": "Write the actual hook sentence here — 1–2 sentences max, written for {{INPUT.platform}}. No placeholders. No meta-instructions.",
       "riskLevel": "safe | medium | risky",
-      "whyRisky": "If risky: what would a cautious editor ask you to cut and why you're keeping it anyway"
+      "whyRisky": "If risky: what a cautious editor would cut and why you're keeping it anyway. If safe/medium: leave empty string."
     },
-    { "type": "contrarian", "text": "", "riskLevel": "", "whyRisky": "" },
-    { "type": "curiosity", "text": "", "riskLevel": "", "whyRisky": "" },
-    { "type": "fear", "text": "", "riskLevel": "", "whyRisky": "" },
-    { "type": "story", "text": "", "riskLevel": "", "whyRisky": "" }
+    {
+      "type": "contrarian",
+      "text": "",
+      "riskLevel": "",
+      "whyRisky": ""
+    },
+    {
+      "type": "curiosity",
+      "text": "",
+      "riskLevel": "",
+      "whyRisky": ""
+    },
+    {
+      "type": "fear",
+      "text": "",
+      "riskLevel": "",
+      "whyRisky": ""
+    },
+    {
+      "type": "story",
+      "text": "",
+      "riskLevel": "",
+      "whyRisky": ""
+    }
   ],
   "script": {
-    "opening": "Write the actual first 20–30 seconds of spoken script. Natural rhythm. One unfinished thought is okay. One oddly specific detail is required. Do NOT write a description of what the script should do — write the script itself.",
-    "keyTurnLine": "The single line where the video shifts from setup to insight — the moment that makes someone rewind",
-    "closing": "Write the actual last 2–3 sentences. Sharp. Not motivational. Should leave a slight sting or a question open."
+    "keyTurnLine": "The single line where the video shifts from setup to insight — the moment that makes someone rewind"
   },
   "antiAI": {
     "avoid": [
-      "Listing things in sets of 3",
-      "Clean topic sentences before each paragraph",
-      "Ending on a lesson or takeaway",
-      "Using 'here's the thing' as a pivot",
-      "Symmetrical sentence structure across multiple lines"
+      "Specific AI tell #1 found in THIS output — not a generic rule",
+      "Specific AI tell #2 found in THIS output",
+      "Specific AI tell #3 found in THIS output",
+      "Specific AI tell #4 found in THIS output",
+      "Specific AI tell #5 found in THIS output"
     ],
-    "fix": "Interrupt yourself once. Use a sentence fragment. Let one thought land without explanation."
+    "fix": "One concrete edit instruction for THIS output — what to add, remove, or break. Not a principle."
   },
   "risk": {
-    "whyFeelsAI": "The specific thing about this output that would read as AI-generated to a sharp editor — be honest",
+    "whyFeelsAI": "The specific thing about THIS output that would read as AI-generated to a sharp editor",
     "fix": "One concrete edit: what to add, remove, or break to humanize it — describe the exact change, not the principle"
   }
 }
 
-HUMAN WRITING RULES (non-negotiable):
+HARD RULES (non-negotiable):
 - hooks: EXACTLY 5
+- hooks[*].text: Write actual hook content — no placeholders, no meta-instructions, no "Written for {{INPUT.platform}}" filler
 - At least 2 hooks must be "risky" — meaning a cautious brand editor would ask you to soften them
-- script.opening must be actual written content — 80–150 words of real spoken script
-- script.closing must be actual written content — 2–3 sentences, not a description
-- script must contain: 1 oddly specific detail, 1 unpolished transition, 1 moment that doesn't serve the argument but feels real
-- antiAI.avoid must be specific to THIS output — not a generic list of AI tells
+- script.keyTurnLine must be an actual line, not a description
+- antiAI.avoid must name specific tells found in THIS output — not a generic checklist
 - risk.fix must be a concrete edit instruction, not a writing principle
 
-FINAL CHECK: Read every hook aloud. If it sounds like something a content tool generated — rewrite it.
+FINAL CHECK: Read every hook aloud. If any sounds templated or generic, rewrite it.
+`;
+
+export const OPENING_FROM_HOOK_PROMPT = `
+You are a human creator writing for {{INPUT.platform}}.
+You are writing only the opening section for ONE selected hook.
+
+CONTEXT:
+- Platform: {{INPUT.platform}}
+- Creator voice: {{INPUT.creatorVoice}}
+- Target viewer: {{INPUT.targetViewer}}
+- Selected hook: {{HOOK.text}}
+- Hook type: {{HOOK.type}}
+- Core conflict: {{STEP_3A.contentIdeas[0].coreConflict}}
+- Proof mechanic anchor: {{STEP_1.proofMechanics.evidenceUsed}}
+
+Return ONLY valid JSON. No markdown, no commentary.
+
+{
+  "opening": {
+    "hook": "Repeat the selected hook, polished only if needed",
+    "bridge": "15–20s spoken script that continues this exact hook. 60–90 words. Must feel naturally spoken.",
+    "fullOpening": "Hook + bridge as one continuous spoken opening block",
+    "whyItWorks": "2-3 sentences: why this opening should retain attention for this target viewer"
+  },
+  "riskCheck": {
+    "riskLevel": "safe | medium | risky",
+    "why": "Short editor-style note",
+    "softVersion": "A safer alternative opening with lower backlash risk"
+  }
+}
+
+RULES:
+- Do not change the core claim of the selected hook
+- Keep spoken rhythm, not essay rhythm
+- Include one oddly specific detail to feel human
+- No placeholders and no meta instructions
+
+CORE ANGLE SELECTION RULE:
+- User selects ONLY ONE core angle.
+- Supporting ideas may appear only if they reinforce the core angle.
+- Before finalizing, run an angle consistency check:
+  - Does every line reinforce the chosen core angle?
+  - If any line drifts to another angle, rewrite or remove it.
 `;

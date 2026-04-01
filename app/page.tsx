@@ -9,6 +9,7 @@ import { LoadingSkeleton } from "@/app/components/LoadingSkeleton";
 import { HistorySidebar } from "@/app/components/HistorySidebar";
 import { useHistory, HistoryEntry } from "@/app/lib/useHistory";
 import { textToSlug } from "./lib/utils";
+import PilotWizard from "@/app/components/PilotWizard";
 
 const SCRIPT_PLACEHOLDER = `Paste your YouTube script here...
 
@@ -25,6 +26,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
+  const [mode, setMode] = useState<"standard" | "pilot">("standard");
   const resultsRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -136,7 +138,7 @@ export default function Home() {
     await deleteAnalysis(id);
     if (activeId === id) handleNew();
   }
-
+// console.log("result", result)
   return (
     <div className="flex min-h-screen bg-[#0a0a0a]">
       {/* ── Sidebar ── */}
@@ -176,6 +178,31 @@ export default function Home() {
                 🔗 Reddit Ideas
               </Link>
             </div>
+
+            {/* Mode Toggle */}
+            <div className="flex items-center gap-2 bg-[#1a1a1a] rounded-lg p-1">
+              <button
+                onClick={() => setMode("standard")}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
+                  mode === "standard"
+                    ? "bg-[#ff2d20] text-white"
+                    : "text-[#555] hover:text-[#aaa]"
+                }`}
+              >
+                Standard
+              </button>
+              <button
+                onClick={() => setMode("pilot")}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
+                  mode === "pilot"
+                    ? "bg-blue-600 text-white"
+                    : "text-[#555] hover:text-[#aaa]"
+                }`}
+              >
+                PILOT 10-Step
+              </button>
+            </div>
+
             {result && (
               <button
                 onClick={handleNew}
@@ -188,6 +215,14 @@ export default function Home() {
         </header>
 
         <div className="max-w-3xl mx-auto px-6 py-8">
+          {/* PILOT 10-STEP WIZARD */}
+          {mode === "pilot" && (
+            <PilotWizard onComplete={() => setMode("standard")} />
+          )}
+
+          {/* STANDARD ANALYSIS MODE */}
+          {mode === "standard" && (
+            <>
           {/* ── Hero ── */}
           {!result && (
             <div className="text-center mb-10">
@@ -337,6 +372,8 @@ export default function Home() {
                 ← Try again
               </button>
             </div>
+          )}
+            </>
           )}
         </div>
       </main>

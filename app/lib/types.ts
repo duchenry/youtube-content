@@ -28,6 +28,14 @@ export interface AnalysisResult {
     manipulation: string;
   };
 
+  // Backward-compatible alias for newer prompt schema
+  proofMechanics?: {
+    evidenceUsed: string;
+    perceptionEffect: string;
+    framing: string;
+    transferablePattern?: string;
+  };
+
   structureDNA?: {
     phases: Array<{
       phase: string;
@@ -103,9 +111,13 @@ export interface AnalysisResult {
   hooks: Array<{
     type: string;
     text: string;
+    riskLevel?: string;
+    whyRisky?: string;
+    bridge?: string;
   }>;
   script: {
-    opening: string;
+    keyTurnLine?: string;
+    opening?: string;
     closing: string;
   };
   antiAI: {
@@ -160,4 +172,203 @@ export interface RedditPostData {
     text: string;
     upvotes: number;
   }>;
+}
+
+// ─────────────────────────────────────────
+// PILOT SYSTEM — 10-Step Interactive Flow
+// ─────────────────────────────────────────
+
+// STEP 1: DATA INTAKE
+export interface Step1DataIntake {
+  competitorTranscript: string;
+  topComments: string[];
+}
+
+// STEP 2: LOGIC ANALYSIS
+export interface Step2LogicAnalysis {
+  coreProblem: string;
+  audienceEmotion: {
+    fear: string;
+    desire: string;
+    insecurity: string;
+  };
+  attentionTrigger: string;
+  competitorAngle?: {
+    mainAngle: string;
+    focusAreas: string[];
+    ignoredAreas: string[];
+  };
+}
+
+// STEP 3: POV GATE
+export interface Step3POVGate {
+  whatYouBelieve: string;
+  whatYouAttack: string;
+  whoYouDefend: string;
+}
+
+// STEP 4: STRATEGIC GAPS & ANGLES
+export interface Step4StrategicGaps {
+  gaps: Array<{
+    gap: string;
+    reason: string;
+  }>;
+  angles: Array<{
+    name: string;
+    description: string;
+    emotionalPull: string;
+  }>;
+  selectionNotice?: string;
+}
+
+export interface CoreAngleSelection {
+  angleIndex: number;
+  angleName: string;
+  angleDescription: string;
+  reasoning?: string;
+  realWorldExample?: string;
+  emotionalRelevance?: string;
+  challengeResponse?: string;
+  confirmation: string;
+}
+
+// STEP 5: HUMAN INPUT REQUEST
+export interface Step5HumanInput {
+  requestedInputs: Array<{
+    id: string;
+    label: string;
+    prompt: string;
+    whyNeeded?: string;
+    response: string;
+    required?: boolean;
+  }>;
+  // Backward-compatible fields for older saved sessions
+  story1?: string;
+  story2?: string;
+  emotionalMoment?: string;
+  metaphorSource?: string;
+  angleDeepDiveAnswers: Array<{
+    question: string;
+    answer: string;
+  }>;
+}
+
+// STEP 5A: HUMAN INPUT GUIDANCE (generated from prior analysis)
+export interface Step5InputGuidance {
+  rationale: string;
+  missingSignals: string[];
+  deepDiveQuestions: string[];
+  requestedInputs: Array<{
+    id: string;
+    label: string;
+    prompt: string;
+    whyNeeded?: string;
+    required?: boolean;
+  }>;
+  minimumRequired?: number;
+}
+
+// STEP 6: INPUT VALIDATION
+export interface Step6InputValidation {
+  isValid: boolean;
+  feedback: string;
+  approved: boolean;
+  povLockedLines?: string[];
+}
+
+// STEP 7: STRUCTURE BLUEPRINT
+export interface Step7StructureBlueprint {
+  hookDirection: string;
+  sections: Array<{
+    title: string;
+    purpose: string;
+    contentSource: string;
+  }>;
+  emotionalSpikes: Array<{
+    location: string;
+    trigger: string;
+  }>;
+  dataSuggestions?: {
+    needed: boolean;
+    queries: string[];
+    note: string;
+  };
+}
+
+// STEP 8: SCRIPT PERMISSION GATE
+export interface Step8ScriptPermissionGate {
+  askForPermission: boolean;
+  userApproved?: boolean;
+}
+
+// STEP 9: SCRIPT GENERATION
+export interface Step9ScriptGeneration {
+  hook: string;
+  fullScript: string;
+  scriptWithHumanSlots?: string;
+  naturalFlow: string;
+  embeddedEmotion: string;
+  humanInsertions?: Array<{
+    slotId: string;
+    location: string;
+    purpose: string;
+    whatToAdd: string;
+    whyNow: string;
+    exampleStarter: string;
+    consistencyNote: string;
+  }>;
+}
+
+export interface Step10HumanizationInput {
+  slotEdits: Array<{
+    slotId: string;
+    userText: string;
+  }>;
+  finalNotes?: string;
+}
+
+// STEP 10: DISTORTION REMINDER
+export interface Step10DistortionReminder {
+  tips: Array<{
+    technique: string;
+    description: string;
+  }>;
+  exampleEdit: string;
+  finalScript: string;
+  slotResolution: Array<{
+    slotId: string;
+    usedText: string;
+    integratedWhere: string;
+  }>;
+  consistencyCheck: {
+    coreAngle: string;
+    driftDetected: boolean;
+    fixApplied: string;
+  };
+}
+
+// PILOT SESSION — Main state container
+export interface PilotSession {
+  id: string;
+  createdAt: string;
+  currentStep: number;
+  inputContract: {
+    platform: string;
+    niche: string;
+    creatorVoice: string;
+    targetViewer: string;
+  };
+  step1?: Step1DataIntake;
+  step2?: Step2LogicAnalysis;
+  step3?: Step3POVGate;
+  step4?: Step4StrategicGaps;
+  coreAngle?: CoreAngleSelection;
+  step5Guidance?: Step5InputGuidance;
+  step5?: Step5HumanInput;
+  step6?: Step6InputValidation;
+  step7?: Step7StructureBlueprint;
+  step8?: Step8ScriptPermissionGate;
+  step9?: Step9ScriptGeneration;
+  step10?: Step10DistortionReminder;
+  finalScript?: string;
 }

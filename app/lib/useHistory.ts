@@ -15,57 +15,151 @@ export interface HistoryEntry {
   slug: string | null;
 }
 
-function normalizeLegacyAnalysis(result: AnalysisResult): AnalysisResult {
-  const proof = result.proofMechanics;
-  const financial = result.financialReality;
+type JsonRecord = Record<string, unknown>;
 
-  const numbersUsed =
-    financial?.numbersUsed?.trim() ||
-    proof?.evidenceUsed?.trim() ||
-    "Not explicitly stated in source; evidence is implied more than quantified.";
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
-  const perceptionEffect =
-    financial?.perceptionEffect?.trim() ||
-    proof?.perceptionEffect?.trim() ||
-    "Makes the claim feel plausible through confident framing and selective proof.";
+function asRecord(value: unknown): JsonRecord {
+  return isRecord(value) ? value : {};
+}
 
-  const manipulation =
-    financial?.manipulation?.trim() ||
-    proof?.framing?.trim() ||
-    "Uses sequencing and contrast framing to make the new belief feel inevitable.";
+function asString(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return "";
+}
 
-  const transferablePattern =
-    proof?.transferablePattern?.trim() ||
-    manipulation;
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    const single = asString(value);
+    return single ? [single] : [];
+  }
+  return value.map((item) => asString(item)).filter(Boolean);
+}
 
-  const normalizedHooks = (result.hooks ?? []).map((hook) => ({
-    ...hook,
-    riskLevel: hook.riskLevel || "",
-    whyRisky: hook.whyRisky || "",
-    bridge: hook.bridge || "",
-  }));
+function asConfidence(value: unknown): "high" | "medium" | "low" {
+  const normalized = asString(value).toLowerCase();
+  if (normalized === "high" || normalized === "medium" || normalized === "low") {
+    return normalized;
+  }
+  return "low";
+}
 
-  const script = result.script || { closing: "" };
-  const normalizedKeyTurnLine = script.keyTurnLine?.trim() || script.opening?.trim() || "";
+function asStrength(value: unknown): "weak" | "medium" | "strong" {
+  const normalized = asString(value).toLowerCase();
+  if (normalized === "weak" || normalized === "medium" || normalized === "strong") {
+    return normalized;
+  }
+  return "medium";
+}
+
+function normalizeAnalysis(result: AnalysisResult): AnalysisResult {
+  const raw = asRecord(result as unknown);
+
+  const hook = asRecord(raw.hook);
+  const hookQuality = asRecord(raw.hookQuality);
+  const angle = asRecord(raw.angle);
+  const coreTruth = asRecord(raw.coreTruth);
+  const attention = asRecord(raw.attention);
+  const retentionDriver = asRecord(attention.retentionDriver);
+  const proofMechanics = asRecord(raw.proofMechanics);
+  const transferablePattern = asRecord(proofMechanics.transferablePattern);
+  const structureDNA = asRecord(raw.structureDNA);
+  const audience = asRecord(raw.audience);
+  const commentPatterns = asRecord(audience.commentPatterns);
+  const weakPoints = asRecord(raw.weakPoints);
+  const priority = asRecord(raw.priority);
+
+  const phasesRaw = Array.isArray(structureDNA.phases) ? structureDNA.phases : [];
+  const retentionRaw = Array.isArray(structureDNA.retentionMoments)
+    ? structureDNA.retentionMoments
+    : [];
+  const painMapRaw = Array.isArray(audience.painMap) ? audience.painMap : [];
 
   return {
-    ...result,
-    financialReality: {
-      numbersUsed,
-      perceptionEffect,
-      manipulation,
+    hook: {
+      raw: asString(hook.raw),
+      type: asString(hook.type),
+      mechanism: asString(hook.mechanism),
+      confidence: asConfidence(hook.confidence),
+    },
+    hookQuality: {
+      strength: asStrength(hookQuality.strength),
+      why: asString(hookQuality.why),
+      risk: asString(hookQuality.risk),
+    },
+    angle: {
+      claim: asString(angle.claim),
+      supportingLogic: asString(angle.supportingLogic),
+      hiddenAssumption: asString(angle.hiddenAssumption),
+      confidence: asConfidence(angle.confidence),
+    },
+    coreTruth: {
+      insight: asString(coreTruth.insight),
+      triggerMoment: asString(coreTruth.triggerMoment),
+      confidence: asConfidence(coreTruth.confidence),
+    },
+    attention: {
+      patternBreak: asString(attention.patternBreak),
+      escalation: asStringArray(attention.escalation),
+      retentionDriver: {
+        description: asString(retentionDriver.description),
+        confidence: asConfidence(retentionDriver.confidence),
+      },
     },
     proofMechanics: {
-      evidenceUsed: numbersUsed,
-      perceptionEffect,
-      framing: manipulation,
-      transferablePattern,
+      evidenceUsed: asStringArray(proofMechanics.evidenceUsed),
+      transferablePattern: {
+        pattern: asString(transferablePattern.pattern),
+        confidence: asConfidence(transferablePattern.confidence),
+      },
     },
-    hooks: normalizedHooks,
-    script: {
-      keyTurnLine: normalizedKeyTurnLine,
-      opening: script.opening || normalizedKeyTurnLine,
-      closing: script.closing || "",
+    structureDNA: {
+      phases: phasesRaw.map((item) => {
+        const phase = asRecord(item);
+        return {
+          phase: asString(phase.phase),
+          goal: asString(phase.goal),
+          tactic: asString(phase.tactic),
+          source: asString(phase.source) || "INFERRED",
+        };
+      }),
+      retentionMoments: retentionRaw.map((item) => {
+        const moment = asRecord(item);
+        return {
+          moment: asString(moment.moment),
+          whyItWorks: asString(moment.whyItWorks),
+          pattern: asString(moment.pattern),
+          isPrimary: Boolean(moment.isPrimary),
+        };
+      }),
+    },
+    audience: {
+      profile: asString(audience.profile),
+      painMap: painMapRaw.map((item) => {
+        const pain = asRecord(item);
+        return {
+          pain: asString(pain.pain),
+          feeling: asString(pain.feeling),
+          realScenario: asString(pain.realScenario),
+        };
+      }),
+      commentPatterns: {
+        repeatedPain: asString(commentPatterns.repeatedPain),
+        languageUsed: asStringArray(commentPatterns.languageUsed),
+        misunderstanding: asString(commentPatterns.misunderstanding),
+      },
+    },
+    weakPoints: {
+      whereItLosesAttention: asString(weakPoints.whereItLosesAttention),
+      why: asString(weakPoints.why),
+    },
+    priority: {
+      primaryDriver: asString(priority.primaryDriver),
+      secondaryDriver: asString(priority.secondaryDriver),
+      why: asString(priority.why),
     },
   };
 }
@@ -79,7 +173,6 @@ export function useHistory() {
     let data = null;
     let error = null;
 
-    // Try with slug first (new schema)
     ({ data, error } = await supabase
       .from("analyses")
       .select("id, created_at, script_preview, comments, result, title, slug")
@@ -93,7 +186,6 @@ export function useHistory() {
         (String(error.code).startsWith("40") && error.message?.toLowerCase().includes("slug")));
 
     if (slugColumnMissing) {
-      console.warn("Slug column missing in DB, falling back to safe fetchHistory.");
       ({ data, error } = await supabase
         .from("analyses")
         .select("id, created_at, script_preview, comments, result, title")
@@ -105,7 +197,7 @@ export function useHistory() {
       setHistory(
         (data as Array<Partial<HistoryEntry>>).map((item) => ({
           ...item,
-          result: normalizeLegacyAnalysis((item.result || {}) as AnalysisResult),
+          result: normalizeAnalysis((item.result || {}) as AnalysisResult),
           slug: item.slug || null,
         })) as HistoryEntry[]
       );
@@ -119,21 +211,14 @@ export function useHistory() {
   }, [fetchHistory]);
 
   const saveAnalysis = useCallback(
-    async (
-      script: string,
-      comments: string[],
-      result: AnalysisResult
-    ): Promise<string | null> => {
-      const script_preview = script.trim().slice(0, 200);
-      const title =
-        result.coreTruth?.insight?.slice(0, 80) || script_preview.slice(0, 80);
+    async (script: string, comments: string[], result: AnalysisResult): Promise<string | null> => {
+      const normalized = normalizeAnalysis(result);
+      const scriptPreview = script.trim().slice(0, 200);
+      const title = normalized.coreTruth.insight.slice(0, 80) || scriptPreview.slice(0, 80);
 
-      const baseSlug =
-        result.coreTruth?.insight || script_preview || "draft-script";
+      const baseSlug = normalized.coreTruth.insight || scriptPreview || "draft-script";
       const slug = textToSlug(baseSlug) || `draft-${Date.now()}`;
-
-      // Convert comments array to newline-separated string for storage
-      const commentsStr = comments.filter(c => c.trim()).join("\n") || null;
+      const commentsStr = comments.filter((comment) => comment.trim()).join("\n") || null;
 
       let data = null;
       let error = null;
@@ -141,9 +226,9 @@ export function useHistory() {
       ({ data, error } = await supabase
         .from("analyses")
         .insert({
-          script_preview,
+          script_preview: scriptPreview,
           comments: commentsStr,
-          result,
+          result: normalized,
           title,
           slug,
         })
@@ -157,13 +242,12 @@ export function useHistory() {
           (String(error.code).startsWith("40") && error.message?.toLowerCase().includes("slug")));
 
       if (slugMissing) {
-        console.warn("Slug column missing in DB, inserting without slug.");
         ({ data, error } = await supabase
           .from("analyses")
           .insert({
-            script_preview,
+            script_preview: scriptPreview,
             comments: commentsStr,
-            result,
+            result: normalized,
             title,
           })
           .select("id")
@@ -175,21 +259,20 @@ export function useHistory() {
         return null;
       }
 
-      // Optimistically prepend to local state
       setHistory((prev) => [
         {
-          id: data?.id,
+          id: data.id,
           created_at: new Date().toISOString(),
-          script_preview,
+          script_preview: scriptPreview,
           comments: commentsStr,
-          result: normalizeLegacyAnalysis(result),
+          result: normalized,
           title,
           slug,
         },
         ...prev,
       ]);
 
-      return data?.id || null;
+      return data.id || null;
     },
     []
   );
@@ -197,12 +280,11 @@ export function useHistory() {
   const deleteAnalysis = useCallback(async (id: string) => {
     const { error } = await supabase.from("analyses").delete().eq("id", id);
     if (!error) {
-      setHistory((prev) => prev.filter((e) => e.id !== id));
+      setHistory((prev) => prev.filter((entry) => entry.id !== id));
     }
   }, []);
 
   const getAnalysisBySlug = useCallback(async (slug: string): Promise<HistoryEntry | null> => {
-    // 1) Direct lookup by slug column
     let { data, error } = await supabase
       .from("analyses")
       .select("id, created_at, script_preview, comments, result, title, slug")
@@ -216,7 +298,6 @@ export function useHistory() {
         (String(error.code).startsWith("40") && error.message?.toLowerCase().includes("slug")));
 
     if (slugColumnMissing) {
-      console.warn("Slug column missing in DB, fallback getAnalysisBySlug without slug lookup.");
       data = null;
       error = null;
     }
@@ -224,12 +305,11 @@ export function useHistory() {
     if (data) {
       return {
         ...data,
-        result: normalizeLegacyAnalysis((data as any).result as AnalysisResult),
-        slug: (data as any).slug || null,
+        result: normalizeAnalysis((data as HistoryEntry).result),
+        slug: (data as HistoryEntry).slug || null,
       } as HistoryEntry;
     }
 
-    // 2) If no slug row, try fallback searching all analyses and matching computed slug
     const { data: allData, error: allError } = await supabase
       .from("analyses")
       .select("id, created_at, script_preview, comments, result, title, slug");
@@ -244,13 +324,11 @@ export function useHistory() {
       return generatedSlug === slug;
     });
 
-    if (!match) {
-      return null;
-    }
+    if (!match) return null;
 
     return {
       ...match,
-      result: normalizeLegacyAnalysis(match.result),
+      result: normalizeAnalysis(match.result),
       slug: match.slug || textToSlug(match.result?.coreTruth?.insight || ""),
     };
   }, []);

@@ -1,135 +1,77 @@
 export interface AnalysisResult {
-  // STEP 1: Core extraction
+  hook: {
+    raw: string;
+    type: string;
+    mechanism: string;
+    confidence: "high" | "medium" | "low";
+  };
+  hookQuality: {
+    strength: "weak" | "medium" | "strong";
+    why: string;
+    risk: string;
+  };
+  angle: {
+    claim: string;
+    supportingLogic: string;
+    hiddenAssumption: string;
+    confidence: "high" | "medium" | "low";
+  };
   coreTruth: {
     insight: string;
-    trigger: string;
+    triggerMoment: string;
+    confidence: "high" | "medium" | "low";
   };
   attention: {
-    patternBreak: {
-      whatFeelsDifferent: string;
-      whyItGrabs: string;
+    patternBreak: string;
+    escalation: string[];
+    retentionDriver: {
+      description: string;
+      confidence: "high" | "medium" | "low";
     };
-    escalation: string;
-    retention: string;
   };
-  persuasion: {
-    beliefDestroyed: string;
-    beliefInstalled: string;
+  proofMechanics: {
+    evidenceUsed: string[];
+    transferablePattern: {
+      pattern: string;
+      confidence: "high" | "medium" | "low";
+    };
   };
-  structure: {
-    hookMechanism: string;
-    revealMoment: string;
-    payoff: string;
-  };
-
-  financialReality?: {
-    numbersUsed: string;
-    perceptionEffect: string;
-    manipulation: string;
-  };
-
-  // Backward-compatible alias for newer prompt schema
-  proofMechanics?: {
-    evidenceUsed: string;
-    perceptionEffect: string;
-    framing: string;
-    transferablePattern?: string;
-  };
-
-  structureDNA?: {
+  structureDNA: {
     phases: Array<{
       phase: string;
-      timeRange: string;
       goal: string;
       tactic: string;
-      viewerState: string;
-    }>;
-    transitions: Array<{
-      from: string;
-      to: string;
-      method: string;
-      lineExample: string;
+      source: "OBSERVED" | "INFERRED" | string;
     }>;
     retentionMoments: Array<{
       moment: string;
       whyItWorks: string;
       pattern: string;
+      isPrimary: boolean;
     }>;
   };
-
-  // STEP 2: Audience psychology
-  viewer: {
+  audience: {
     profile: string;
-    externalMask: string;
-    internalFear: string;
-    triggerMoment: string;
-  };
-  egoThreat: {
-    whatHurts: string;
-    comparison: string;
-    privateTruth: string;
-  };
-  painMap: Array<{
-    pain: string;
-    feeling: string;
-    realScenario: string;
-  }>;
-  desire: {
-    surface: string;
-    real: string;
-    identityShift: string;
-  };
-
-  // STEP 2.5: Differentiation (optional)
-  differentiation?: {
-    povMode: 'anti-system' | 'balanced' | 'strategic';
-    agreement: string;
-    destruction: string[];
-    newPOV: {
-      core: string;
-      edge: string;
-    };
-    truthFilter: {
-      fakeGood: string;
-      realTruth: string;
+    painMap: Array<{
+      pain: string;
+      feeling: string;
+      realScenario: string;
+    }>;
+    commentPatterns: {
+      repeatedPain: string;
+      languageUsed: string[];
+      misunderstanding: string;
     };
   };
-
-  // STEP 3A: Idea engine
-  angles: Array<{
-    type: string;
-    idea: string;
-    whyItWorks: string;
-  }>;
-  contentIdeas: Array<{
-    title: string;
-    angle: string;
-    coreConflict: string;
-  }>;
-
-  // STEP 3B: Execution
-  hooks: Array<{
-    type: string;
-    text: string;
-    riskLevel?: string;
-    whyRisky?: string;
-    bridge?: string;
-  }>;
-  script: {
-    keyTurnLine?: string;
-    opening?: string;
-    closing: string;
+  weakPoints: {
+    whereItLosesAttention: string;
+    why: string;
   };
-  antiAI: {
-    avoid: string[];
-    fix: string;
+  priority: {
+    primaryDriver: string;
+    secondaryDriver: string;
+    why: string;
   };
-  risk: {
-    whyFeelsAI: string;
-    fix: string;
-  };
-
-  // Optional input metadata
   inputComments?: string[];
 }
 

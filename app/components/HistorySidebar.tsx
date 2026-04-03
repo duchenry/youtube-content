@@ -9,6 +9,8 @@ interface Props {
   onSelect: (entry: HistoryEntry) => void;
   onDelete: (id: string) => void;
   onNew: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 function timeAgo(iso: string): string {
@@ -33,9 +35,11 @@ export function HistorySidebar({
   onSelect,
   onDelete,
   onNew,
+  isOpen = false,
+  onClose,
 }: Props) {
-  return (
-    <aside className="w-64 shrink-0 flex flex-col border-r border-[#1a1a1a] bg-[#0d0d0d] min-h-screen sticky top-0 h-screen overflow-hidden">
+  const sidebarContent = (
+    <aside className="w-64 shrink-0 flex flex-col border-r border-[#1a1a1a] bg-[#0d0d0d] h-full overflow-hidden">
       {/* Header */}
       <div className="px-4 py-4 border-b border-[#1a1a1a]">
         <div className="flex items-center gap-2 mb-3">
@@ -128,5 +132,27 @@ export function HistorySidebar({
         </p>
       </div>
     </aside>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <div className="hidden md:flex md:min-h-screen md:sticky md:top-0 md:h-screen">
+        {sidebarContent}
+      </div>
+
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={onClose}
+          />
+          <div className="absolute left-0 top-0 h-full w-72 max-w-[85vw]">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

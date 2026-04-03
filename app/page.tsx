@@ -1,15 +1,11 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useState, useRef } from "react";
 import { AnalysisResult } from "@/app/lib/types";
-import { AnalysisDisplay } from "@/app/components/AnalysisDisplay";
+import { AnalysisDisplay } from "./components/AnalysisDisplay";
 import { LoadingSkeleton } from "@/app/components/LoadingSkeleton";
 import { HistorySidebar } from "@/app/components/HistorySidebar";
-import { useHistory, HistoryEntry } from "@/app/lib/useHistory";
-import { textToSlug } from "./lib/utils";
-import PilotWizard from "@/app/components/PilotWizard";
+import { useHistory, HistoryEntry } from "./lib/useHistory";
 
 const SCRIPT_PLACEHOLDER = `Paste your YouTube script here...
 
@@ -25,38 +21,8 @@ export default function Home() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [draftLoading, setDraftLoading] = useState(false);
-  const [mode, setMode] = useState<"standard" | "pilot">("standard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
-
-  async function handleDraftContent() {
-    if (!slug) return;
-    
-    setDraftLoading(true);
-    try {
-      // Call the API to generate/prep the draft
-      console.log("encodeURIComponent(slug)", encodeURIComponent(slug))
-      const res = await fetch(`/api/draft?slug=${encodeURIComponent(slug)}`);
-      if (!res.ok) throw new Error('Failed to prepare draft');
-      
-      // Navigate to the content page
-      router.push(`/content/${slug}`);
-    } catch (err) {
-      console.error('Draft preparation failed:', err);
-      // Still navigate even if API fails, the page will handle it
-      router.push(`/content/${slug}`);
-    } finally {
-      setDraftLoading(false);
-    }
-  }
-
-  const slug = useMemo(() => {
-    if (!result) return "";
-    const base = result.coreTruth?.insight || script.slice(0, 80) || "draft-script";
-    const normalized = textToSlug(base);
-    return normalized || `draft-${Date.now()}`;
-  }, [result, script]);
 
   const { history, loading: historyLoading, saveAnalysis, deleteAnalysis } =
     useHistory();
@@ -114,7 +80,7 @@ export default function Home() {
     setActiveId(entry.id);
     setScript(entry.script_preview);
     const commentsArray = entry.comments
-      ? entry.comments.split("\n").filter(c => c.trim()).slice(0, 7)
+      ? entry.comments.split("\n").filter((c: string) => c.trim()).slice(0, 7)
       : [];
     setComments([...commentsArray, ...Array(7 - commentsArray.length).fill("")]);
     setError(null);
@@ -149,14 +115,26 @@ export default function Home() {
         onSelect={handleSelectHistory}
         onDelete={handleDelete}
         onNew={handleNew}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
       {/* ── Main Content ── */}
       <main className="flex-1 overflow-x-hidden">
         {/* Top bar */}
         <header className="border-b border-[#1a1a1a] sticky top-0 z-40 backdrop-blur-md bg-[#0a0a0a]/90">
-          <div className="max-w-3xl mx-auto px-6 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="max-w-3xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {/* Mobile history toggle */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="md:hidden flex flex-col gap-1 p-1"
+                aria-label="Open history"
+              >
+                <span className="w-5 h-0.5 bg-[#666] rounded" />
+                <span className="w-5 h-0.5 bg-[#666] rounded" />
+                <span className="w-5 h-0.5 bg-[#666] rounded" />
+              </button>
               <div className="flex items-center gap-2">
                 {saving && (
                   <span className="flex items-center gap-1.5 text-[#555] text-xs">
@@ -171,36 +149,6 @@ export default function Home() {
                   </span>
                 )}
               </div>
-              <Link
-                href="/reddit-idea"
-                className="text-[#555] hover:text-[#ff2d20] text-sm transition-colors font-semibold"
-              >
-                🔗 Reddit Ideas
-              </Link>
-            </div>
-
-            {/* Mode Toggle */}
-            <div className="flex items-center gap-2 bg-[#1a1a1a] rounded-lg p-1">
-              <button
-                onClick={() => setMode("standard")}
-                className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
-                  mode === "standard"
-                    ? "bg-[#ff2d20] text-white"
-                    : "text-[#555] hover:text-[#aaa]"
-                }`}
-              >
-                Standard
-              </button>
-              <button
-                onClick={() => setMode("pilot")}
-                className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
-                  mode === "pilot"
-                    ? "bg-blue-600 text-white"
-                    : "text-[#555] hover:text-[#aaa]"
-                }`}
-              >
-                PILOT 10-Step
-              </button>
             </div>
 
             {result && (
@@ -214,15 +162,7 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="max-w-3xl mx-auto px-6 py-8">
-          {/* PILOT 10-STEP WIZARD */}
-          {mode === "pilot" && (
-            <PilotWizard onComplete={() => setMode("standard")} />
-          )}
-
-          {/* STANDARD ANALYSIS MODE */}
-          {mode === "standard" && (
-            <>
+        <div className="max-w-3xl mx-auto px-3 sm:px-6 py-8">
           {/* ── Hero ── */}
           {!result && (
             <div className="text-center mb-10">
@@ -372,8 +312,6 @@ export default function Home() {
                 ← Try again
               </button>
             </div>
-          )}
-            </>
           )}
         </div>
       </main>

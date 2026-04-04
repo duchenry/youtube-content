@@ -1,3 +1,4 @@
+// Sidebar lịch sử — danh sách các phân tích đã lưu, chọn để xem lại hoặc xóa
 "use client";
 
 import { HistoryEntry } from "@/app/lib/useHistory";

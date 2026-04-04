@@ -1,3 +1,4 @@
+// Layout gốc — thiết lập metadata SEO + font + CSS toàn cục
 import type { Metadata } from "next";
 import "./globals.css";
 

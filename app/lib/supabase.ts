@@ -1,3 +1,4 @@
+// Kết nối Supabase — dùng cho cả client & server (lưu/đọc lịch sử phân tích)
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;

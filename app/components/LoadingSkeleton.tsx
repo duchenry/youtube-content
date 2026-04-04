@@ -1,13 +1,11 @@
+// Skeleton loading — hiệu ứng chờ khi đang gọi AI phân tích
+// Hiển thị thanh tiến trình giả lập theo 3 nhóm phân tích
 "use client";
 
-// The 3 batches run in parallel on the server.
-// On the client we just animate a progress timeline to show activity.
-// Real completion is signalled when the API returns.
-
 const BATCH_LABELS = [
-  { label: "Core analysis", sections: "Sections 1–6", desc: "Insight · Angle · Hooks · Structure" },
-  { label: "Audience & opportunities", sections: "Sections 7–11", desc: "Pain map · Desires · Video ideas" },
-  { label: "Strategy & creative", sections: "Sections 12–16", desc: "Differentiation · Gaps · Scripts" },
+  { label: "Message & Mechanics", sections: "Hook · Angle · Attention · Proof" },
+  { label: "Structure DNA", sections: "Phases · Retention Moments" },
+  { label: "Audience & Assessment", sections: "Pain Map · Comments · Weak Points · Priority" },
 ];
 
 export function LoadingSkeleton() {
@@ -50,13 +48,8 @@ export function LoadingSkeleton() {
               style={{ animation: "spin 1s linear infinite", animationDelay: `${i * 0.1}s` }}
             />
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-white text-sm font-semibold">{batch.label}</span>
-                <span className="tag-pill bg-[#1a1a1a] text-[#555] text-[10px] normal-case font-normal">
-                  {batch.sections}
-                </span>
-              </div>
-              <p className="text-[#444] text-xs">{batch.desc}</p>
+              <span className="text-white text-sm font-semibold">{batch.label}</span>
+              <p className="text-[#444] text-xs mt-0.5">{batch.sections}</p>
             </div>
             {/* Shimmer progress bar */}
             <div className="w-24 h-1.5 rounded-full bg-[#1a1a1a] overflow-hidden shrink-0">

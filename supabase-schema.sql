@@ -52,6 +52,15 @@ create table if not exists analyses (
   -- The full GPT analysis as JSONB — queryable, indexable
   result      jsonb not null,
 
+  -- Step 2: research directives (AI-generated Reddit search guide)
+  research    jsonb,
+
+  -- Step 3: strategic synthesis (final strategy output)
+  synthesis   jsonb,
+
+  -- Raw Reddit data the user pasted (structured posts + comments)
+  reddit_raw  text,
+
   -- Derived title from coreInsight for quick display
   title       text,
 

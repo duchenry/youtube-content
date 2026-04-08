@@ -1,111 +1,201 @@
-/**
- * Prompt Bước 2: HƯỚNG DẪN NGHIÊN CỨU (Detective)
- * Nhận JSON từ Bước 1 + HỒ SƠ VIEWER → tạo truy vấn Reddit nhắm đúng demographic
- * Mục đích: tìm nơi NHÓM VIEWER CỤ THỂ đang đau, bất đồng, vỡ mộng
- * — kết hợp data đối thủ + tâm lý nhóm mục tiêu
- */
-
 export const RESEARCH_PROMPT = `
-You are a research strategist specializing in audience psychology. Detective mode ONLY.
+You are a behavioral contradiction scout.
 
-You just received:
-1. The extraction analysis of a competitor's YouTube video
-2. A detailed viewer profile of the CHANNEL OWNER'S target audience
+Your job is NOT to find general pain, opinions, or surface complaints.
 
-Your job: generate Reddit search directives that find REAL PAIN, TENSION, and RAW EMOTION
-from THIS SPECIFIC demographic — not generic disagreement.
+Your job is to expose where REAL PEOPLE:
+
+Know something is true
+But STILL act against it
+OR are trapped in situations where EVERY option has a cost
+
+This is NOT topic research.
+This is CONTRADICTION + ASSUMPTION BREAK + HUMAN TRUTH research.
 
 ━━━━━━━━━━━━━━━━━━━━━
 TARGET VIEWER PROFILE:
 {{VIEWER_PROFILE}}
 ━━━━━━━━━━━━━━━━━━━━━
 
-This is WHO you are researching for. Every query must be shaped by:
-- WHERE these men hang out on Reddit (not generic subs)
-- HOW they talk (raw, sarcastic, self-deprecating — not polished)
-- WHAT they actually fear (not what self-help content says they fear)
-- WHY they distrust the competitor's framing (even if they watched the whole video)
-
-━━━━━━━━━━━━━━━━━━━━━
 EXTRACTION DATA (from Step 1):
 {{EXTRACTION_JSON}}
+
+Focus specifically on:
+
+coreTruth.insight
+angle.claim
+angle.hiddenAssumption
+
 ━━━━━━━━━━━━━━━━━━━━━
 
-CRITICAL THINKING PROCESS:
-Before generating queries, reason through these questions (do NOT include in output):
-- What does the competitor's video ASSUME about the viewer that doesn't match our target?
-- Where would a 25-year-old man making $35k/year ACTUALLY disagree with this advice?
-- What Reddit threads would contain the REAL version of the pain this video monetizes?
-- What language would THESE men use to describe this problem (not therapist language)?
+CRITICAL THINKING (do NOT output):
+
+What does the video claim is TRUE?
+What must be TRUE for that claim to work? (hidden assumptions)
+In real life, where does this BREAK?
+Where do people AGREE with this… but still FAIL anyway?
+Where are people stuck in NO-WIN LOOPS? (every option leads to pain)
+What truth are people trying to AVOID facing?
+
+━━━━━━━━━━━━━━━━━━━━━
 
 Return ONLY valid JSON. No markdown. No explanation.
 
 {
-  "searchDirectives": [
-    {
-      "query": "Reddit search query — must use language THIS demographic actually uses, not clinical/polished terms",
-      "subreddits": ["2-4 subreddits where THIS specific audience is MOST active and MOST honest"],
-      "purpose": "What this query is designed to FIND — must reference both a specific extraction field AND how it relates to the target viewer's real situation",
-      "targetField": "Which extraction field this challenges (e.g. 'coreTruth.insight', 'angle.hiddenAssumption')",
-      "viewerAngle": "Why THIS specific demographic would push back here — what makes their experience DIFFERENT from what the video assumes"
-    }
-  ],
+"primaryContradiction": {
+"type": "know_vs_do | belief_collapse | identity_pressure | forced_tradeoff | no_win_loop",
+"description": "The SINGLE most painful contradiction — must expose an uncomfortable or identity-threatening truth",
+"whyThisMatters": "Why this is the deepest leverage point for real behavior (NOT theory)"
+},
 
-  "deepDig": [
-    {
-      "category": "resentment | false_belief | constraint | internal_conflict | hopeless_loop",
-      "query": "Reddit search query targeting THIS specific psychological layer — must sound like how a real man would vent, not how a therapist would describe it",
-      "subreddits": ["2-3 subs where this category surfaces most honestly"],
-      "whatToFind": "Exact type of post/comment to look for — be extremely specific about what counts as a hit",
-      "exampleLanguage": ["2-3 example phrases that would indicate a quality find — real Reddit-sounding language, NOT clinical terms"],
-      "signalStrength": "strong | moderate | weak — based on how much evidence you expect to find for THIS category given the video topic. strong = this is the PRIMARY pain axis for this audience. weak = exists but harder to find direct evidence."
-    }
-  ],
+"contradictionSearch": [
+{
+"type": "know_vs_do | belief_collapse | identity_pressure | failed_outcome | no_win_loop",
 
-  "lookFor": [
-    {
-      "pattern": "Specific phrase, slang, or emotional pattern THIS demographic uses when expressing this pain — must be realistic Reddit language, not academic",
-      "why": "What finding this reveals about the gap between the competitor's framing and the viewer's ACTUAL lived experience",
-      "emotionalLayer": "The HIDDEN emotion underneath — what these men feel but would never say directly (shame, inadequacy, fear of being exposed)"
-    }
-  ]
+  "targetAssumption": "EXACT hidden assumption or part of coreTruth being attacked",
+
+  "direction": "What real-life contradiction or breakdown this query is trying to expose",
+
+  "query": "Reddit-style search — MUST sound like a frustrated/confessing human at 2AM",
+
+  "subreddits": ["2-4 brutally honest communities"],
+
+  "whatToFind": "Must include: decision → action → consequence (NOT just thoughts)",
+
+  "successSignal": "Proof = behavior + measurable outcome (debt %, time lost, regret, burnout, trapped situation)",
+
+  "severity": "low | medium | high",
+
+  "whyItBreaksTheVideo": "How this exposes a LIMIT, FAILURE, or missing condition in the competitor’s logic"
 }
+
+],
+
+"behaviorPatterns": [
+{
+"pattern": "A REPEATED behavior where people knowingly act against reality",
+
+  "exampleLanguage": [
+    "Raw, emotional, Reddit-style phrasing"
+  ],
+
+  "actionLoop": "Describe the LOOP (what they keep doing again and again)",
+
+  "cost": "REAL cost (money, time, mental health, relationships)",
+
+  "emotionalDriver": "Core emotion (fear, shame, ego, comparison, avoidance, etc.)",
+
+  "hiddenTruth": "What reality this exposes that the video does NOT address"
+}
+
+],
+
+"identityPressure": [
+{
+"identity": "Identity they feel forced to maintain (e.g. successful adult, not a failure)",
+
+  "pressure": "What forces them to act against logic (social, internal, cultural)",
+
+  "exampleLanguage": [
+    "How it actually sounds in real speech"
+  ],
+
+  "fearIfNotAct": "What they fear happens if they DON'T act",
+
+  "whyIrrational": "Why they still choose a worse decision"
+}
+
+],
+
+"failureStories": [
+{
+"query": "Search for real stories where people FOLLOWED the logic and got BAD outcomes",
+
+  "subreddits": ["2-3 real-experience communities"],
+
+  "whatToFind": "Must include: decision → timeline → negative outcome",
+
+  "signal": "Clear cause-effect: action leads to regret, debt, stress, or worse situation"
+}
+
+],
+
+"noWinLoops": [
+{
+"situation": "Scenario where EVERY option leads to pain",
+
+  "optionA": "Choice A + its cost",
+
+  "optionB": "Choice B + its cost",
+
+  "exampleLanguage": [
+    "How people describe feeling trapped"
+  ],
+
+  "whyPowerful": "Why this creates strong emotional tension for content"
+}
+
+]
+}
+
+━━━━━━━━━━━━━━━━━━━━━
+DEEP PAIN ENFORCEMENT (CRITICAL):
+
+You MUST push beyond rational explanations.
+
+For EACH major insight:
+
+What is the uncomfortable truth people are avoiding?
+What would make someone feel exposed reading this?
+What identity is being threatened?
+
+REQUIRED DEPTH SIGNALS (at least ONE per insight):
+
+Shame ("I feel like a loser", "I know this is stupid but…")
+Fear of falling behind or being judged
+Identity threat ("If I don't do this, what does it say about me?")
+Emotional trap ("Every option makes me feel worse")
+
+If it feels safe, neutral, or socially acceptable → REWRITE.
+
+Write as if exposing something people don't want others to see.
 
 ━━━━━━━━━━━━━━━━━━━━━
 RULES:
 
-1. searchDirectives: 4-6 entries. Each must target a DIFFERENT pain point that is specific to THIS viewer profile.
-2. EVERY query must pass the VIEWER TEST: "Would a 28-year-old American man making $40k search this?" If not → rewrite.
-3. subreddits must be REAL and must be where THIS demographic actually posts (not just topic-relevant).
-   High-value subs for this demographic: r/personalfinance, r/povertyfinance, r/selfimprovement, r/DecidingToBeBetter,
-   r/AskMen, r/MensLib, r/FinancialPlanning, r/careerguidance, r/jobs, r/antiwork, r/TrueOffMyChest,
-   r/offmychest, r/confession, r/getdisciplined, r/Advice, r/NoStupidQuestions
-   — but ONLY include subs relevant to THIS video's topic.
-4. lookFor: 4-6 entries. Focus on LANGUAGE PATTERNS this demographic uses — how they mask pain, express frustration, ask for help without looking weak.
-5. viewerAngle is MANDATORY — every directive must explain WHY this audience specifically would resist or disagree.
-6. emotionalLayer is MANDATORY — dig past the surface emotion to what's underneath.
-7. NO clinical/therapist language in queries — use the way real men talk on Reddit.
+EVERYTHING must anchor to:
+coreTruth OR
+hiddenAssumption
+If it does NOT break an assumption → DELETE
+NO feelings-only insights.
+MUST include behavior + consequence.
+Queries must feel REAL:
+vent
+regret
+confession
+NOT polished or analytical
+PRIORITIZE:
+real failure
+real cost
+real tradeoffs
+severity must reflect REAL damage:
+low = inconvenience
+medium = stress/regret
+high = long-term damage (debt, burnout, identity crisis)
+If output could apply to ANY topic → REWRITE
+If there is no LOOP, COST, or CONSEQUENCE → REWRITE
+STRONGLY PREFER:
+people know better but still fail
+people tried and got worse results
+people feel trapped between bad options
+If this insight would NOT make a viewer pause and feel personally called out → REWRITE
 
-DEEP DIG RULES (CRITICAL — this is what separates generic from gai góc):
-8. deepDig: EXACTLY 5 entries, one for EACH category. No skipping.
-9. Categories explained:
-   - resentment: Anger at the system, at advice-givers, at people who "made it". Look for "easy for them to say", "that doesn't work in real life", bitterness toward success stories.
-   - false_belief: A belief the viewer clings to that is holding them back. Look for moments where that belief CRACKS — "I did everything right and I'm still broke", "working hard doesn't actually work".
-   - constraint: SPECIFIC financial/life constraints — not "low income" but "$200 left after bills", "credit card carrying balance", "one emergency away from disaster".
-   - internal_conflict: Knowing what to do but not doing it — "I know I should save but what's the point", "I keep buying shit I don't need", the gap between intention and action.
-   - hopeless_loop: Feeling trapped in a cycle with no exit — "every month is a reset", "I keep starting over", "nothing changes no matter what I try".
-10. exampleLanguage: Must sound like Reddit, NOT like a textbook. If a therapist would say it → rewrite in vernacular.
-
+━━━━━━━━━━━━━━━━━━━━━
 ANTI-GENERIC CHECK:
-- Could this query work for ANY audience? → REWRITE with this viewer's specific circumstances.
-- Does the query sound like a therapist wrote it? → REWRITE in Reddit vernacular.
-- Is viewerAngle vague like "they might disagree"? → REWRITE with specific life scenario.
-- Could lookFor.pattern appear in a textbook? → REWRITE with actual Reddit phrasing.
-- Does deepDig.exampleLanguage sound clinical? → REWRITE. Must pass: "Would a real guy type this at 2am?"
 
-DEMOGRAPHIC SPECIFICITY:
-- $30-50k income means: paycheck-to-paycheck reality, can't "just invest", emergency fund is a fantasy
-- "Vulnerable" means: won't admit it. Look for it disguised as anger, cynicism, dark humor, "asking for a friend"
-- Age 20-45 means: some are early-career lost, some are mid-career trapped. Queries should cover BOTH.
-- American men means: specific cultural pressure to "figure it out alone", stigma around asking for help
+Would a real person say this at 2AM? If not → REWRITE
+Is there ACTION? If not → REWRITE
+Is there COST? If not → REWRITE
+Is there a LOOP or TRAP? If not → REWRITE
+Does it feel slightly uncomfortable to read? If not → REWRITE
 `;

@@ -81,6 +81,7 @@ function SearchGuide() {
 }
 
 export function ResearchDisplay({ data }: Props) {
+  console.log("data", data)
   return (
     <div className="space-y-4">
       <SearchGuide />

@@ -4,13 +4,13 @@
  * Đây là bước DUY NHẤT tạo ra chiến lược — Bước 1-2 chỉ quan sát & nghiên cứu
  */
 import { NextRequest, NextResponse } from "next/server";
-import { SYNTHESIS_PROMPT, INPUT_CONTRACT } from "@/app/lib/prompt";
+import { SYNTHESIS_PROMPT } from "@/app/lib/prompts/synthesis";
 import { callModel, renderPromptTemplate } from "@/app/lib/openai";
 import { normalizeSynthesis } from "@/app/lib/normalizers";
 
 export async function POST(req: NextRequest) {
   try {
-    const { extraction, redditData, contentType } = await req.json();
+    const { extraction, redditData, contentType, authorInput } = await req.json();
     if (!extraction || typeof extraction !== "object") {
       return NextResponse.json({ error: "extraction (Step 1 result) is required." }, { status: 400 });
     }
@@ -23,9 +23,12 @@ export async function POST(req: NextRequest) {
       EXTRACTION_JSON: JSON.stringify(extraction, null, 2),
       REDDIT_DATA: data,
       CONTENT_TYPE: (contentType || "discovery").trim(),
-      VIEWER_PROFILE: INPUT_CONTRACT.targetViewer,
+      VIEWER_PROFILE: "",
+      AUTHOR_INPUT: authorInput
+        ? JSON.stringify(authorInput, null, 2)
+        : "None provided — infer entirely from Reddit + extraction"
     });
-    const parsed = await callModel(prompt, process.env.OPENAI_MODEL_ENRICH?.trim() || "gpt-5-mini", Number(process.env.ENRICH_MAX_TOKENS || 4000));
+    const parsed = await callModel(prompt, process.env.OPENAI_MODEL_ENRICH?.trim() || "gpt-4o-mini", Number(process.env.ENRICH_MAX_TOKENS || 8000));
 
     return NextResponse.json({ result: normalizeSynthesis(parsed) });
   } catch (err: unknown) {

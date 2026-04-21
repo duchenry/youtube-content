@@ -9,6 +9,7 @@ const STEPS = [
   { n: 1, label: "Phân tích", desc: "Trích xuất cấu trúc video" },
   { n: 2, label: "Nghiên cứu", desc: "Hướng dẫn tìm Reddit" },
   { n: 3, label: "Chiến lược", desc: "Tổng hợp hành động" },
+  { n: 4, label: "Script", desc: "Tạo script hoàn chỉnh" },
 ];
 
 interface Props {
@@ -20,7 +21,7 @@ interface Props {
 export function StepBar({ current, maxDone, onBack }: Props) {
   return (
     <div className="mb-6">
-      <div className="flex items-stretch gap-2">
+      <div className="flex items-stretch gap-1 md:gap-2">
         {STEPS.map((s, i) => {
           const done = s.n <= maxDone;
           const active = s.n === current;
@@ -34,32 +35,32 @@ export function StepBar({ current, maxDone, onBack }: Props) {
               {/* Step block */}
               {canClick ? (
                 <button onClick={() => onBack(s.n)}
-                  className="rounded-xl border border-[#1a1a1a] bg-[#0e0e0e] px-3 py-3 md:px-4 md:py-4 text-left hover:border-[#333] hover:bg-[#111] transition-all">
+                  className="rounded-lg border border-[#1a1a1a] bg-[#0e0e0e] px-2 py-2 md:px-4 md:py-4 text-left hover:border-[#333] hover:bg-[#111] transition-all">
                   <div className="flex items-center gap-2.5">
                     <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-emerald-500/20 text-emerald-400">✓</span>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-[#aaa] truncate">{s.label}</p>
-                      <p className="text-[11px] text-[#555] truncate">{s.desc}</p>
+                      <p className="text-[11px] text-[#555] truncate hidden md:block">{s.desc}</p>
                     </div>
                   </div>
                 </button>
               ) : active ? (
-                <div className="rounded-xl border border-emerald-500/50 bg-emerald-500/10 px-3 py-3 md:px-4 md:py-4 shadow-[0_0_12px_rgba(16,185,129,0.08)]">
+                <div className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-2 py-2 md:px-4 md:py-4 shadow-[0_0_12px_rgba(16,185,129,0.08)]">
                   <div className="flex items-center gap-2.5">
                     <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-emerald-500 text-white">{s.n}</span>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-white truncate">{s.label}</p>
-                      <p className="text-[11px] text-emerald-400/70 truncate">{s.desc}</p>
+                      <p className="text-[11px] text-emerald-400/70 truncate hidden md:block">{s.desc}</p>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="rounded-xl border border-[#191919] bg-[#0c0c0c] px-3 py-3 md:px-4 md:py-4 opacity-40">
+                <div className="rounded-lg border border-[#191919] bg-[#0c0c0c] px-2 py-2 md:px-4 md:py-4 opacity-40">
                   <div className="flex items-center gap-2.5">
                     <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-[#151515] text-[#444] border border-[#222]">{s.n}</span>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-[#555] truncate">{s.label}</p>
-                      <p className="text-[11px] text-[#333] truncate">{s.desc}</p>
+                      <p className="text-[11px] text-[#333] truncate hidden md:block">{s.desc}</p>
                     </div>
                   </div>
                 </div>

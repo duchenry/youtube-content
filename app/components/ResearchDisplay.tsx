@@ -1,14 +1,17 @@
 /**
  * Hiển thị kết quả Bước 2 — hướng dẫn nghiên cứu Reddit
- * Danh sách truy vấn + subreddits (link trực tiếp) + pattern cần tìm
+ * Hiển thị primaryContradiction, contradictionSearch, behaviorPatterns, identityPressure, failureStories, noWinLoops
  * Kèm hướng dẫn chi tiết cách search cho người chưa quen
  */
 "use client";
 
 import { useState } from "react";
-import type { ResearchDirective } from "@/app/lib/types";
+import type { ResearchDirective, AnalysisResult } from "@/app/lib/types";
 
-interface Props { data: ResearchDirective }
+interface Props { 
+  data: ResearchDirective;
+  extraction?: AnalysisResult;
+}
 
 function SearchGuide() {
   const [open, setOpen] = useState(true);
@@ -80,86 +83,237 @@ function SearchGuide() {
   );
 }
 
-export function ResearchDisplay({ data }: Props) {
-  console.log("data", data)
+function Tags({ label, items }: { label: string; items: string[] }) {
+  if (!items.length) return null;
   return (
-    <div className="space-y-4">
-      <SearchGuide />
-      <h3 className="text-white text-lg font-semibold mt-2">Truy vấn tìm kiếm</h3>
-      {data.searchDirectives.map((d, i) => (
-        <div key={i} className="rounded-xl border border-[#222] bg-gradient-to-b from-[#101010] to-[#0b0b0b] p-4">
-          <p className="text-white text-sm font-semibold mb-1">&ldquo;{d.query}&rdquo;</p>
-          <p className="text-[#888] text-xs mb-2">{d.purpose}</p>
-          {d.viewerAngle && <p className="text-amber-400/70 text-xs mb-2">👤 {d.viewerAngle}</p>}
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {d.subreddits.map((raw, j) => {
-              const sub = raw.replace(/^r\//, "");
-              return (
-                <a key={j} href={`https://www.reddit.com/r/${encodeURIComponent(sub)}/search?q=${encodeURIComponent(d.query)}&sort=relevance&t=year`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="px-2 py-0.5 rounded bg-[#1a1a1a] text-[#2563eb] text-xs hover:text-white transition-colors">
-                  r/{sub} ↗
-                </a>
-              );
-            })}
-          </div>
-          {d.targetField && <p className="text-[#555] text-[11px] italic">Nhắm vào: {d.targetField}</p>}
-        </div>
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((t, i) => (
+        <span key={i} className="px-2 py-0.5 rounded bg-[#1a1a1a] text-[#2563eb] text-xs hover:text-white transition-colors">{t}</span>
       ))}
+    </div>
+  );
+}
 
-      {data.lookFor.length > 0 && (
-        <>
-          <h3 className="text-white text-lg font-semibold mt-6">Tìm gì khi đọc Reddit</h3>
-          {data.lookFor.map((l, i) => (
-            <div key={i} className="rounded-xl border border-[#222] bg-[#101010] p-4">
-              <p className="text-[#e2e2e2] text-sm">{l.pattern}</p>
-              <p className="text-[#555] text-xs mt-1 italic">{l.why}</p>
-              {l.emotionalLayer && <p className="text-red-400/60 text-xs mt-1">🔍 Lớp ẩn: {l.emotionalLayer}</p>}
+export function ResearchDisplay({ data, extraction }: Props) {
+  // Safe access to arrays - handle undefined/null
+  // creatorInterrogation đã được di chuyển thành internal step của research prompt
+  // hiện tại chỉ có input creator answers trực tiếp trên trang
+  const contradictionSearch = Array.isArray(data?.contradictionSearch) ? data.contradictionSearch : [];
+  const behaviorPatterns = Array.isArray(data?.behaviorPatterns) ? data.behaviorPatterns : [];
+  const identityPressure = Array.isArray(data?.identityPressure) ? data.identityPressure : [];
+  const failureStories = Array.isArray(data?.failureStories) ? data.failureStories : [];
+  const noWinLoops = Array.isArray(data?.noWinLoops) ? data.noWinLoops : [];
+
+  const creatorInterrogation = Array.isArray(data?.creatorInterrogation) ? data.creatorInterrogation : [];
+
+  console.log("[ResearchDisplay] data:", data);
+  console.log("[ResearchDisplay] creatorInterrogation:", creatorInterrogation);
+  console.log("[ResearchDisplay] contradictionSearch:", contradictionSearch);
+
+  return (
+    <div className="space-y-6">
+      <SearchGuide />
+
+      {/* ✅ TIER 1 - CREATOR INTERROGATION (OUTPUT TỪ RESEARCH) */}
+      {creatorInterrogation.length > 0 && (
+        <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4">
+          <h3 className="text-white text-lg font-semibold mb-3">❓ Câu hỏi dành cho bạn</h3>
+          <p className="text-[#888] text-xs mb-4">Đây là các điểm mở được AI tìm thấy từ video và comment. Trả lời những câu hỏi này → AI sẽ tự động rebuild toàn bộ research theo hướng góc nhìn của bạn.</p>
+          
+          {creatorInterrogation.map((item, i) => (
+            <div key={i} className="rounded-lg border border-purple-500/10 bg-[#0a0a0f] p-4 mb-3">
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                  item.gapType === 'unaddressed_villain' ? 'bg-red-900/20 text-red-400' :
+                  item.gapType === 'contested_fact' ? 'bg-amber-900/20 text-amber-400' :
+                  item.gapType === 'deeper_pain' ? 'bg-blue-900/20 text-blue-400' :
+                  'bg-purple-900/20 text-purple-400'
+                }`}>
+                  {item.gapType}
+                </span>
+                <span className="text-[#666] text-xs">từ {item.source}</span>
+              </div>
+              
+              <p className="text-[#999] text-xs mb-2 italic">{'\u0022'}{item.triggerEvidence}{'\u0022'}</p>
+              <p className="text-white text-sm font-medium mb-3">{item.questionForCreator}</p>
+              
+              <textarea 
+                placeholder="Câu trả lời của bạn ở đây. Nói đúng góc nhìn thực tế của bạn, không cần lịch sự..."
+                className="w-full bg-[#111] border border-[#222] rounded-lg p-3 text-white text-sm resize-none focus:border-purple-500/50 focus:outline-none transition-colors"
+                rows={2}
+              />
+              
+              <p className="text-[#666] text-xs mt-2">{item.whyThisOpens}</p>
             </div>
           ))}
-        </>
+          
+        </div>
       )}
 
-      {data.deepDig.length > 0 && (
-        <>
-          <h3 className="text-white text-lg font-semibold mt-6">Deep Dig — 5 trụ tâm lý</h3>
-          <p className="text-[#555] text-xs -mt-2 mb-2">Tìm kiếm chuyên sâu theo từng trụ cảm xúc. Ưu tiên mục có tín hiệu mạnh.</p>
-          {data.deepDig.map((d, i) => {
-            const strengthColor = d.signalStrength?.toLowerCase().includes("strong") ? "text-emerald-400" : d.signalStrength?.toLowerCase().includes("moderate") ? "text-amber-400" : "text-[#555]";
-            const categoryLabels: Record<string, string> = { resentment: "😤 Resentment", false_belief: "💔 False Belief", constraint: "🔒 Constraint", internal_conflict: "⚔️ Internal Conflict", hopeless_loop: "🔁 Hopeless Loop" };
-            const label = categoryLabels[d.category] || d.category;
-            return (
-              <div key={i} className="rounded-xl border border-[#222] bg-gradient-to-b from-[#101010] to-[#0b0b0b] p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-white text-sm font-semibold">{label}</span>
-                  {d.signalStrength && <span className={`text-xs font-medium ${strengthColor}`}>{d.signalStrength}</span>}
+
+
+      {/* Primary Contradiction */}
+      <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+        <h3 className="text-white text-lg font-semibold mb-2">⚡ Mâu thuẫn chính</h3>
+        <p className="text-[#e2e2e2] text-sm mb-2">{data?.primaryContradiction?.description || "—"}</p>
+        <p className="text-[#555] text-xs italic">{data?.primaryContradiction?.whyThisMatters || ""}</p>
+        {data?.primaryContradiction?.type && (
+          <span className="inline-block mt-2 px-2 py-0.5 rounded bg-red-900/20 border border-red-900/30 text-red-400/70 text-xs">
+            {data.primaryContradiction.type}
+          </span>
+        )}
+      </div>
+
+      {/* Contradiction Search */}
+      <div>
+        <h3 className="text-white text-lg font-semibold mb-3">🔍 Truy vấn tìm kiếm mâu thuẫn</h3>
+        {contradictionSearch.length === 0 && <p className="text-[#555] text-sm">Không có dữ liệu truy vấn</p>}
+        {contradictionSearch.map((d, i) => (
+          <div key={i} className="rounded-xl border border-[#222] bg-gradient-to-b from-[#101010] to-[#0b0b0b] p-4 mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-white text-sm font-semibold">&ldquo;{d.query}&rdquo;</p>
+              {d.severity && (
+                <span className={`text-xs font-medium px-2 py-0.5 rounded ${d.severity === 'high' ? 'bg-red-900/20 text-red-400' : d.severity === 'medium' ? 'bg-amber-900/20 text-amber-400' : 'bg-[#1a1a1a] text-[#555]'}`}>
+                  {d.severity}
+                </span>
+              )}
+            </div>
+            <p className="text-[#888] text-xs mb-2">{d.direction}</p>
+            <p className="text-[#555] text-xs mb-2 italic">Nhắm vào: {d.targetAssumption}</p>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {d.subreddits.map((raw, j) => {
+                const sub = raw.replace(/^r\//, "");
+                return (
+                  <a key={j} href={`https://www.reddit.com/r/${encodeURIComponent(sub)}/search?q=${encodeURIComponent(d.query)}&sort=relevance&t=year`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="px-2 py-0.5 rounded bg-[#1a1a1a] text-[#2563eb] text-xs hover:text-white transition-colors">
+                    r/{sub} ↗
+                  </a>
+                );
+              })}
+            </div>
+            <p className="text-[#555] text-xs italic">Tìm: {d.whatToFind}</p>
+            {d.successSignal && <p className="text-[#555] text-xs mt-1">Signal: {d.successSignal}</p>}
+            {d.whyItBreaksTheVideo && <p className="text-red-400/60 text-xs mt-1">💥 Phá vỡ video ở điểm: {d.whyItBreaksTheVideo}</p>}
+          </div>
+        ))}
+      </div>
+
+      {/* ✅ TIER 2 - NO WIN LOOPS (EMOTIONAL CORE) */}
+      {noWinLoops.length > 0 && (
+        <div>
+          <h3 className="text-white text-lg font-semibold mb-3">🔁 Vòng lặp không lối thoát</h3>
+          {noWinLoops.map((d, i) => (
+            <div key={i} className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 mb-3">
+              <p className="text-[#e2e2e2] text-sm mb-2">{d.situation}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                 <div className="rounded-lg bg-[#101010] p-3 border border-[#222]">
+                   <p className="text-amber-400/70 text-xs font-semibold mb-2">Lựa chọn A</p>
+                   <p className="text-[#ccc] text-sm mb-1">{d.optionA.action}</p>
+                   <p className="text-[#666] text-xs">{d.optionA.immediateFeel} → {d.optionA.longTermCost}</p>
+                   <p className="text-[#555] text-xs mt-1">Loại chi phí: {d.optionA.costType}</p>
+                 </div>
+                 <div className="rounded-lg bg-[#101010] p-3 border border-[#222]">
+                   <p className="text-amber-400/70 text-xs font-semibold mb-2">Lựa chọn B</p>
+                   <p className="text-[#ccc] text-sm mb-1">{d.optionB.action}</p>
+                   <p className="text-[#666] text-xs">{d.optionB.immediateFeel} → {d.optionB.longTermCost}</p>
+                   <p className="text-[#555] text-xs mt-1">Loại chi phí: {d.optionB.costType}</p>
+                 </div>
+              </div>
+              <p className="text-red-400/60 text-xs italic">💡 Tại sao mạnh: {d.whyPowerful}</p>
+              {d.exampleLanguage.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-[#555] text-[11px] mb-1">Ngôn ngữ thực:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {d.exampleLanguage.map((ex, j) => (
+                      <span key={j} className="px-2 py-0.5 rounded bg-amber-900/15 border border-amber-900/20 text-amber-400/70 text-xs italic">&ldquo;{ex}&rdquo;</span>
+                    ))}
+                  </div>
                 </div>
-                <p className="text-[#ccc] text-sm mb-1">&ldquo;{d.query}&rdquo;</p>
-                <p className="text-[#888] text-xs mb-2">{d.whatToFind}</p>
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {d.subreddits.map((raw, j) => {
-                    const sub = raw.replace(/^r\//, "");
-                    return (
-                      <a key={j} href={`https://www.reddit.com/r/${encodeURIComponent(sub)}/search?q=${encodeURIComponent(d.query)}&sort=relevance&t=year`}
-                        target="_blank" rel="noopener noreferrer"
-                        className="px-2 py-0.5 rounded bg-[#1a1a1a] text-[#2563eb] text-xs hover:text-white transition-colors">
-                        r/{sub} ↗
-                      </a>
-                    );
-                  })}
-                </div>
-                {d.exampleLanguage.length > 0 && (
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ✅ TIER 2 - BEHAVIOR PATTERNS */}
+      {behaviorPatterns.length > 0 && (
+        <div>
+          <h3 className="text-white text-lg font-semibold mb-3">🔄 Pattern hành vi lặp lại</h3>
+          {behaviorPatterns.map((d, i) => (
+            <div key={i} className="rounded-xl border border-[#222] bg-[#101010] p-4 mb-3">
+              <p className="text-[#e2e2e2] text-sm mb-2">{d.pattern}</p>
+              <p className="text-[#555] text-xs mb-1 italic">Vòng lặp: {d.actionLoop}</p>
+              <p className="text-red-400/70 text-xs mb-1">💰 Giá phải trả: {d.cost}</p>
+              <p className="text-[#555] text-xs mb-1">🎭 Động lực: {d.emotionalDriver}</p>
+              <p className="text-amber-400/70 text-xs">💡 Sự thật ẩn: {d.hiddenTruth}</p>
+              {d.exampleLanguage.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-[#555] text-[11px] mb-1">Ngôn ngữ thực:</p>
                   <div className="flex flex-wrap gap-1.5">
                     {d.exampleLanguage.map((ex, j) => (
                       <span key={j} className="px-2 py-0.5 rounded bg-red-900/15 border border-red-900/20 text-red-400/70 text-xs italic">&ldquo;{ex}&rdquo;</span>
                     ))}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       )}
+
+      {/* Identity Pressure */}
+      {identityPressure.length > 0 && (
+        <div>
+          <h3 className="text-white text-lg font-semibold mb-3">🎭 Áp lực bản sắc</h3>
+          {identityPressure.map((d, i) => (
+            <div key={i} className="rounded-xl border border-[#222] bg-gradient-to-b from-[#101010] to-[#0b0b0b] p-4 mb-3">
+              <p className="text-white text-sm font-semibold mb-1">Bản sắc: {d.identity}</p>
+              <p className="text-[#888] text-xs mb-1">Áp lực: {d.pressure}</p>
+              <p className="text-red-400/70 text-xs mb-1">😰 Sợ nếu không làm: {d.fearIfNotAct}</p>
+              <p className="text-[#555] text-xs mb-1 italic">Tại sao phi lý: {d.whyIrrational}</p>
+              {d.exampleLanguage.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-[#555] text-[11px] mb-1">Ngôn ngữ thực:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {d.exampleLanguage.map((ex, j) => (
+                      <span key={j} className="px-2 py-0.5 rounded bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] text-xs italic">&ldquo;{ex}&rdquo;</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Failure Stories */}
+      {failureStories.length > 0 && (
+        <div>
+          <h3 className="text-white text-lg font-semibold mb-3">💔 Câu chuyện thất bại</h3>
+          {failureStories.map((d, i) => (
+            <div key={i} className="rounded-xl border border-[#222] bg-[#101010] p-4 mb-3">
+              <p className="text-white text-sm font-semibold mb-2">&ldquo;{d.query}&rdquo;</p>
+              <p className="text-[#888] text-xs mb-2">{d.whatToFind}</p>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {d.subreddits.map((raw, j) => {
+                  const sub = raw.replace(/^r\//, "");
+                  return (
+                    <a key={j} href={`https://www.reddit.com/r/${encodeURIComponent(sub)}/search?q=${encodeURIComponent(d.query)}&sort=relevance&t=year`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="px-2 py-0.5 rounded bg-[#1a1a1a] text-[#2563eb] text-xs hover:text-white transition-colors">
+                      r/{sub} ↗
+                    </a>
+                  );
+                })}
+              </div>
+              <p className="text-[#555] text-xs italic">Signal: {d.signal}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+
     </div>
   );
 }

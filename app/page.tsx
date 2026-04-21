@@ -1,19 +1,17 @@
-/**
- * Trang chính — giao diện nhập script + comments đối thủ
- * Gọi /api/analyze (Bước 1) và hiển thị kết quả qua AnalysisDisplay
- * Sidebar bên trái: lịch sử các phân tích đã lưu
- */
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import type { AnalysisResult, ResearchDirective, StrategicSynthesis } from "@/app/lib/types";
+import type { AnalysisResult, ResearchDirective, StrategicSynthesis, GeneratedScript } from "@/app/lib/types";
 import { AnalysisDisplay } from "./components/AnalysisDisplay";
 import { ResearchDisplay } from "./components/ResearchDisplay";
 import { SynthesisDisplay } from "./components/SynthesisDisplay";
+import { ScriptDisplay } from "./components/ScriptDisplay";
 import { StepBar } from "./components/StepBar";
 import { LoadingSkeleton } from "@/app/components/LoadingSkeleton";
 import { HistorySidebar } from "@/app/components/HistorySidebar";
 import { useHistory, HistoryEntry } from "./lib/useHistory";
+import { normalizeResearch, normalizeSynthesis } from "./lib/normalizers";
+import { supabase } from "./lib/supabase";
 
 const SCRIPT_PLACEHOLDER = `Paste your YouTube script here...
 
@@ -24,8 +22,10 @@ const SESSION_KEY = "yt-analyzer-session";
 
 export default function Home() {
   const [script, setScript] = useState("");
-  const [comments, setComments] = useState<string[]>(Array(7).fill(""));
+  const [comments, setComments] = useState<string[]>(Array(30).fill(""));
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
+  const [partialSkeletonResult, setPartialSkeletonResult] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -36,12 +36,20 @@ export default function Home() {
   const [step, setStep] = useState(1);
   const [research, setResearch] = useState<ResearchDirective | null>(null);
   const [synthesis, setSynthesis] = useState<StrategicSynthesis | null>(null);
+  const [generatedScript, setGeneratedScript] = useState<GeneratedScript | null>(null);
   const [redditEntries, setRedditEntries] = useState<{ post: string; comments: string[] }[]>(
     [{ post: "", comments: [""] }]
   );
+  const [authorInput, setAuthorInput] = useState({
+    experiences: "",
+    insight: "",
+    loop: ""
+  });
   const [stepLoading, setStepLoading] = useState(false);
+  const [commentMode, setCommentMode] = useState<"individual" | "bulk">("individual");
+  const [bulkComments, setBulkComments] = useState("");
 
-  const { history, loading: historyLoading, saveAnalysis, updateAnalysis, deleteAnalysis } =
+  const { history, loading: historyLoading, saveAnalysis, updateAnalysis, deleteAnalysis, fetchHistory } =
     useHistory();
 
   // ── Restore session from localStorage on mount ──
@@ -57,6 +65,7 @@ export default function Home() {
         if (s.result) setResult(s.result);
         if (s.research) setResearch(s.research);
         if (s.synthesis) setSynthesis(s.synthesis);
+        if (s.generatedScript) setGeneratedScript(s.generatedScript);
         if (s.redditEntries) setRedditEntries(s.redditEntries);
         if (s.activeId) setActiveId(s.activeId);
       }
@@ -69,10 +78,10 @@ export default function Home() {
     if (!hydrated) return;
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify({
-        script, comments, step, result, research, synthesis, redditEntries, activeId,
+        script, comments, step, result, research, synthesis, generatedScript, redditEntries, activeId,
       }));
     } catch { /* quota exceeded — ignore */ }
-  }, [hydrated, script, comments, step, result, research, synthesis, redditEntries, activeId]);
+  }, [hydrated, script, comments, step, result, research, synthesis, generatedScript, redditEntries, activeId]);
 
   const charCount = script.length;
   const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0;
@@ -84,6 +93,7 @@ export default function Home() {
     }
 
     setLoading(true);
+    setLoadingMessage("Đang phân tích cấu trúc kịch bản (Bước 1/2)...");
     setError(null);
     setSaveError(null);
     setResult(null);
@@ -127,16 +137,18 @@ export default function Home() {
     setActiveId(entry.id);
     setScript(entry.script_preview);
     const commentsArray = entry.comments
-      ? entry.comments.split("\n").filter((c: string) => c.trim()).slice(0, 7)
+      ? entry.comments.split("\n").filter((c: string) => c.trim()).slice(0, 30)
       : [];
-    setComments([...commentsArray, ...Array(7 - commentsArray.length).fill("")]);
+    setComments([...commentsArray, ...Array(30 - commentsArray.length).fill("")]);
     setError(null); setSaveError(null);
 
     // Restore saved pipeline state
     const hasResearch = !!entry.research;
     const hasSynthesis = !!entry.synthesis;
+    const hasGeneratedScript = !!entry.generated_script;
     setResearch(entry.research || null);
     setSynthesis(entry.synthesis || null);
+    setGeneratedScript(entry.generated_script || null);
 
     // Parse reddit_raw back into structured entries if available
     if (entry.reddit_raw) {
@@ -151,14 +163,14 @@ export default function Home() {
       setRedditEntries([{ post: "", comments: [""] }]);
     }
 
-    setStep(hasSynthesis ? 3 : hasResearch ? 2 : 1);
+    setStep(hasGeneratedScript ? 4 : hasSynthesis ? 3 : hasResearch ? 2 : 1);
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
   }
 
   function handleNew() {
-    setScript(""); setComments(Array(7).fill(""));
+    setScript(""); setComments(Array(30).fill(""));
     setResult(null); setActiveId(null);
     setError(null); setSaveError(null);
     setStep(1); setResearch(null); setSynthesis(null); setRedditEntries([{ post: "", comments: [""] }]);
@@ -170,19 +182,43 @@ export default function Home() {
     await deleteAnalysis(id);
     if (activeId === id) handleNew();
   }
-
+  
   async function handleStep2() {
     if (!result) return;
     setStepLoading(true); setError(null);
     try {
+      console.log("[Step 2] activeId:", activeId);
       const res = await fetch("/api/research-guide", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ extraction: result }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error || "Step 2 failed");
-      setResearch(json.result); setStep(2);
-      if (activeId) updateAnalysis(activeId, { research: json.result });
+
+      // ✅ ✅ ✅ LƯU VÀO DB NGAY BÂY GIỜ. KHÔNG CÒN THỨ GÌ GIỮA.
+      if (activeId) {
+        console.log("[Step 2] Saving research to DB...");
+        const normalized = normalizeResearch(json.result);
+        const { error: supabaseError } = await supabase
+          .from("analyses")
+          .update({ research: normalized })
+          .eq("id", activeId);
+
+        if (supabaseError) {
+          console.error("[Step 2] Supabase Error:", supabaseError);
+          setError(`Database error: ${supabaseError.message}`);
+        } else {
+          console.log("[Step 2] ✅ RESEARCH SAVED TO DATABASE SUCCESSFULLY");
+        }
+        
+        // Refresh history
+        fetchHistory();
+      }
+
+      // ✅ SAU ĐÓ MỚI THAY ĐỔI STATE
+      setResearch(json.result); 
+      setStep(2);
+
     } catch (err) { setError(err instanceof Error ? err.message : "Step 2 failed"); }
     finally { setStepLoading(false); }
   }
@@ -211,17 +247,77 @@ export default function Home() {
     try {
       const res = await fetch("/api/enrich", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ extraction: result, redditData: data }),
+        body: JSON.stringify({ 
+          extraction: result, 
+          redditData: data,
+          authorInput: Object.values(authorInput).some(v => v.trim()) ? authorInput : undefined
+        }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error || "Step 3 failed");
-      setSynthesis(json.result); setStep(3);
-      if (activeId) updateAnalysis(activeId, { synthesis: json.result, reddit_raw: data });
+      
+      console.log("[Step 3] Synthesis received from API:", Object.keys(json.result || {}));
+      
+      if (activeId) {
+        console.log("[Step 3] Saving synthesis to DB...");
+        const normalized = normalizeSynthesis(json.result);
+        const { error: supabaseError } = await supabase
+          .from("analyses")
+          .update({ synthesis: normalized, reddit_raw: data })
+          .eq("id", activeId);
+
+        if (supabaseError) {
+          console.error("[Step 3] Supabase Error:", supabaseError);
+          setError(`Database error: ${supabaseError.message}`);
+        } else {
+          console.log("[Step 3] ✅ SYNTHESIS SAVED TO DATABASE SUCCESSFULLY");
+          fetchHistory();
+        }
+      } else {
+        console.warn("[Step 3] No activeId - cannot save to Supabase");
+      }
+      
+      // ✅ LƯU VÀO DB TRƯỚC, SAU ĐÓ MỚI THAY ĐỔI STATE
+      setSynthesis(json.result); 
+      setStep(3);
     } catch (err) { setError(err instanceof Error ? err.message : "Step 3 failed"); }
     finally { setStepLoading(false); }
   }
 
-  const maxDone = synthesis ? 3 : research ? 2 : result ? 1 : 0;
+  // async function handleStep4() {
+  //   if (!result || !synthesis) return;
+  //   setStepLoading(true); setError(null);
+  //   try {
+  //     const res = await fetch("/api/generate-script", {
+  //       method: "POST", headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ extraction: result, synthesis: synthesis }),
+  //     });
+  //     const json = await res.json();
+  //     if (!res.ok || json.error) throw new Error(json.error || "Step 4 failed");
+
+  //     if (activeId) {
+  //       console.log("[Step 4] Saving script to DB...");
+  //       const { error: supabaseError } = await supabase
+  //         .from("analyses")
+  //         .update({ generated_script: json.result })
+  //         .eq("id", activeId);
+
+  //       if (supabaseError) {
+  //         console.error("[Step 4] Supabase Error:", supabaseError);
+  //         setError(`Database error: ${supabaseError.message}`);
+  //       } else {
+  //         console.log("[Step 4] ✅ SCRIPT SAVED TO DATABASE SUCCESSFULLY");
+  //         fetchHistory();
+  //       }
+  //     }
+
+  //     setGeneratedScript(json.result);
+  //     setStep(4);
+  //   } catch (err) { setError(err instanceof Error ? err.message : "Step 4 failed"); }
+  //   finally { setStepLoading(false); }
+  // }
+
+  const maxDone = generatedScript ? 4 : synthesis ? 3 : research ? 2 : result ? 1 : 0;
 
   return (
     <div className="flex min-h-screen bg-[#0a0a0a]">
@@ -330,29 +426,84 @@ export default function Home() {
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-white text-sm font-semibold flex items-center gap-1.5">
                     Viewer Comments
-                    <span className="tag-pill bg-[#1a1a1a] text-[#444] normal-case font-normal ml-1">
-                      optional · max 7
-                    </span>
+                     <span className="tag-pill bg-[#1a1a1a] text-[#444] normal-case font-normal ml-1">
+                       optional · max 30
+                     </span>
                   </label>
-                </div>
-                <div className="space-y-2">
-                  {comments.map((comment, idx) => (
-                    <textarea
-                      key={idx}
-                      value={comment}
-                      onChange={(e) => {
-                        const newComments = [...comments];
-                        newComments[idx] = e.target.value;
-                        setComments(newComments);
+                  
+                  <div className="flex bg-[#111] rounded-lg p-1">
+                    <button 
+                      onClick={() => {
+                        setCommentMode("individual");
+                        setBulkComments("");
                       }}
-                      placeholder={`Comment ${idx + 1} (optional) - e.g., "This changed my perspective completely"`}
-                      rows={2}
+                      className={`px-3 py-1 text-xs rounded-md transition-all ${commentMode === 'individual' ? 'bg-[#ff2d20] text-white' : 'text-[#666] hover:text-white'}`}
+                    >
+                      Individual
+                    </button>
+                    <button 
+                      onClick={() => setCommentMode("bulk")}
+                      className={`px-3 py-1 text-xs rounded-md transition-all ${commentMode === 'bulk' ? 'bg-[#ff2d20] text-white' : 'text-[#666] hover:text-white'}`}
+                    >
+                      Bulk Paste
+                    </button>
+                  </div>
+                </div>
+
+                {commentMode === "bulk" && (
+                  <div className="mb-4">
+                    <textarea
+                      value={bulkComments}
+                      onChange={(e) => {
+                        setBulkComments(e.target.value);
+                        try {
+                          // Thử parse JSON array
+                          const parsed = JSON.parse(e.target.value);
+                          if (Array.isArray(parsed)) {
+                            const normalized = parsed.map(c => String(c || "")).slice(0, 30);
+                            setComments([...normalized, ...Array(30 - normalized.length).fill("")]);
+                          }
+                        } catch {
+                          // Nếu không phải JSON thì split theo dòng
+                          const lines = e.target.value.split("\n").filter(l => l.trim()).slice(0, 30);
+                          setComments([...lines, ...Array(30 - lines.length).fill("")]);
+                        }
+                      }}
+                      placeholder={`Paste danh sách comments ở đây, 1 dòng 1 comment hoặc paste toàn bộ array JSON:
+[
+  "Comment 1",
+  "Comment 2",
+  "Comment 3"
+]`}
+                      rows={10}
                       className="w-full bg-[#111] border border-[#1e1e1e] rounded-lg px-3 py-2
                                  text-[#ccc] text-sm placeholder:text-[#2a2a2a] resize-y
-                                 transition-all focus:border-[#ff2d20]/40 font-body leading-relaxed"
+                                 transition-all focus:border-[#ff2d20]/40 font-body leading-relaxed font-mono"
                     />
-                  ))}
-                </div>
+                    <p className="text-[#444] text-xs mt-2">✅ Tự động parse JSON array hoặc danh sách nhiều dòng. Đã nhận {comments.filter(c => c.trim()).length} comment</p>
+                  </div>
+                )}
+                
+                {commentMode === "individual" && (
+                  <div className="space-y-2">
+                    {comments.map((comment, idx) => (
+                      <textarea
+                        key={idx}
+                        value={comment}
+                        onChange={(e) => {
+                          const newComments = [...comments];
+                          newComments[idx] = e.target.value;
+                          setComments(newComments);
+                        }}
+                        placeholder={`Comment ${idx + 1} (optional) - e.g., "This changed my perspective completely"`}
+                        rows={2}
+                        className="w-full bg-[#111] border border-[#1e1e1e] rounded-lg px-3 py-2
+                                   text-[#ccc] text-sm placeholder:text-[#2a2a2a] resize-y
+                                   transition-all focus:border-[#ff2d20]/40 font-body leading-relaxed"
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
 
               {error && (
@@ -380,7 +531,7 @@ export default function Home() {
             </div>
           )}
 
-          {loading && <LoadingSkeleton />}
+          {loading && <LoadingSkeleton message={loadingMessage} />}
 
           {result && !loading && (
             <div ref={resultsRef}>
@@ -482,6 +633,7 @@ export default function Home() {
                       </button>
                     )}
 
+
                     {/* Quantity guide */}
                     <div className="rounded-lg bg-[#111] border border-[#1a1a1a] px-4 py-3">
                       <p className="text-[#666] text-xs leading-relaxed">
@@ -505,7 +657,21 @@ export default function Home() {
                 </>
               )}
 
-              {step === 3 && synthesis && <SynthesisDisplay data={synthesis} />}
+               {/* {step === 3 && synthesis && (
+                 <>
+                   <SynthesisDisplay data={synthesis} />
+                   <div className="mt-6 flex justify-end">
+                     <button 
+                       onClick={handleStep4} 
+                       disabled={stepLoading}
+                       className="px-6 py-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-400 hover:bg-blue-500/20 disabled:opacity-50 disabled:cursor-wait transition-all font-semibold text-sm">
+                       {stepLoading ? "Đang viết script..." : "Tiếp tục → Bước 4: Tạo Script YouTube"}
+                     </button>
+                   </div>
+                 </>
+               )} */}
+               
+               {step === 4 && <ScriptDisplay data={generatedScript} />}
             </div>
           )}
 

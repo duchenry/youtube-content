@@ -8,7 +8,11 @@ const BATCH_LABELS = [
   { label: "Audience & Assessment", sections: "Pain Map · Comments · Weak Points · Priority" },
 ];
 
-export function LoadingSkeleton() {
+interface Props {
+  message?: string;
+}
+
+export function LoadingSkeleton({ message }: Props) {
   return (
     <div className="mt-8 space-y-6">
       {/* Status line */}
@@ -26,7 +30,7 @@ export function LoadingSkeleton() {
           ))}
         </div>
         <span className="text-[#666] text-sm font-mono">
-          Running 3 batches in parallel...
+          {message || "Running 3 batches in parallel..."}
         </span>
       </div>
 

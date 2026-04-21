@@ -115,13 +115,19 @@ export async function callModel(
   const completion = await openai.chat.completions.create({
     model,
     messages: [
-      { role: "system", content: prompt },
-      { role: "user", content: "Return valid JSON only." },
+      { role: "system", content: "You are a precise extraction engine. Return only valid JSON, no extra text, no comments, no markdown." },
+      { role: "user", content: prompt },
     ],
     max_completion_tokens: maxTokens,
+    temperature: 0.1,
+    top_p: 0.95,
+    frequency_penalty: 0.1,
+    presence_penalty: 0.1,
     response_format: { type: "json_object" },
   });
   const firstChoice = completion.choices[0];
+  console.log("[callModel] finish_reason:", firstChoice?.finish_reason);
+  console.log("[callModel] output tokens:", completion.usage?.completion_tokens);
   const raw =
     firstChoice && "message" in firstChoice && isRecord(firstChoice.message)
       ? extractMessageText(firstChoice.message.content)

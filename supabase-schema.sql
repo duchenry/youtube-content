@@ -58,6 +58,9 @@ create table if not exists analyses (
   -- Step 3: strategic synthesis (final strategy output)
   synthesis   jsonb,
 
+  -- Step 4: generated youtube script
+  generated_script jsonb,
+
   -- Raw Reddit data the user pasted (structured posts + comments)
   reddit_raw  text,
 

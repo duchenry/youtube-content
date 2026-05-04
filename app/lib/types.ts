@@ -18,13 +18,8 @@ export interface AnalysisResult {
     mechanism: string;
     confidence: Confidence;
   };
-  hookQuality: {
-    strength: string;
-    risk: string;
-  };
   angle: {
     claim: string;
-    supportingLogic: string[];
     hiddenAssumption: string;
     confidence: Confidence;
   };
@@ -34,33 +29,10 @@ export interface AnalysisResult {
     confidence: Confidence;
   };
   attention: {
-    patternBreak: string;
-    escalation: string[];
     retentionDriver: {
       description: string;
       confidence: Confidence;
     };
-  };
-  proofMechanics: {
-    evidenceUsed: string[];
-    transferablePattern: {
-      pattern: string;
-      confidence: Confidence;
-    };
-  };
-  structureDNA: {
-    phases: Array<{
-      phase: "Hook" | "Build" | "Pivot" | "Close";
-      goal: string;
-      tactic: string;
-      source: string;
-    }>;
-    retentionMoments: Array<{
-      moment: string;
-      whyItWorks: string;
-      pattern: string;
-      isPrimary: boolean;
-    }>;
   };
   audience: {
     profile: string;
@@ -68,18 +40,11 @@ export interface AnalysisResult {
       pain: string;
       realScenario: string;
     }>;
-    commentPatterns: {
-      dominantSentiment: string;
+    commentInsight: {
       repeatedPain: string;
-      emotionalTriggers: Array<{ quote: string; emotion: string; insight: string }>;
-      languageFingerprint: string[];
+      emotionalExample: string;
       unspokenNeed: string;
-      misunderstanding: string;
     };
-  };
-  weakPoints: {
-    whereItLosesAttention: string;
-    why: string;
   };
     priority: {
       primaryDriver: string;
@@ -98,6 +63,28 @@ export interface AnalysisResult {
 // Format này khớp với output từ RESEARCH_PROMPT
 
 export interface ResearchDirective {
+  primaryContradiction: {
+    type: "know_vs_do" | "belief_collapse" | "identity_pressure" | "no_win_loop";
+    description: string;
+    searchInstinct: string;
+    whyItMatters: string;
+  };
+
+  searchInstincts: string[];
+  painSignals: string[];
+
+  ranking: {
+    top1: string;
+    top2: string;
+    top3: string;
+    reason: string;
+  };
+
+  confidence: "high" | "medium" | "low";
+}
+
+// Legacy interface (for backward compatibility if needed)
+export interface ResearchDirectiveLegacy {
   "status": "FINAL" | "DRAFT_ONLY";
   "viewerProfileQuality": "STRONG" | "WEAK";
   "missingProfileFields": string[];
@@ -209,16 +196,16 @@ export interface CreatorAnswer {
 }
 
 export interface MiniSynthesis {
-  "status": "FINAL" | "DRAFT_ONLY";
+  status: "FINAL" | "DRAFT_ONLY";
 
-  "priorityRanking": {
+  priorityRanking: {
     topContradictionIndex: number;
     topBehaviorPatternIndex: number;
     topNoWinLoopIndex: number;
-    reason: "Why these are highest leverage for counter angle";
+    reason: string;
   };
 
-  "tensionPoints": Array<{
+  tensionPoints: Array<{
     sourceLayer: "extraction" | "research" | "creator";
     reference: string;
     tensionType: "internal_conflict" | "contradiction" | "hidden_assumption";
@@ -226,70 +213,71 @@ export interface MiniSynthesis {
     placement: "hook" | "mid_video" | "close" | "proof";
   }>;
 
-  "alignmentReport": {
+  alignmentReport: {
     creatorStanceApplied: boolean;
     adjustedEntries: number[];
     removedEntries: number[];
     overrideReason: string;
   };
+
+  // ✅ FIX: rõ ràng hơn usage layer
+  usageSignal: "hook" | "retention" | "payoff";
 }
 
 // ── Bước 4: TỔNG HỢP CHIẾN LƯỢC — làm gì khác biệt ──
 
 export interface StrategicSynthesis {
-  viewerPsychology: {
-    egoThreat: string;
-    identityShift: string;
-    shameTrigger: string;
-  };
-  painArchitecture: {
-    rawPain: { surface: string; real: string; redditEvidence: string };
-    resentment: { target: string; expression: string; redditEvidence: string };
-    falseBeliefCollapse: { belief: string; crackMoment: string; redditEvidence: string };
-    specificConstraint: { constraint: string; whyItMatters: string; redditEvidence: string };
-    internalConflict: { know: string; cant: string; redditEvidence: string };
-    identityThreat: { admission: string; avoidance: string; redditEvidence: string };
-  };
-  platformTranslation: Array<{
-    redditInsight: string;
-    emotion: string;
-    youtubeLanguage: string;
-    intensity: string;
-  }>;
-  differentiation: {
-    competitorVoice: string;
-    blindSpot: string;
-    unownedAngle: string;
-    voiceOpportunity: string;
-  };
-  hookStrategy: {
-    type: string;
-    targetEmotion: string;
-    falseBeliefHook: string;
-  };
-  contentBriefSeed: {
-    contentAngle: string;
-    emotionalArc: string;
-    keyDifferentiator: string;
-    avoidList: string[];
-  };
-  qualityGate: {
-    painDepth: string;
-    resentmentFound: string;
-    beliefIdentified: string;
-    constraintSpecific: string;
-    conflictPresent: string;
-    hookStrength: string;
-    novelty: string;
-    rawVoiceSample: string;
-    authorInputUsed: "YES" | "NO" | "NOT_PROVIDED";
+  focusPriority: {
+    primary: "contradiction" | "behavior" | "identity" | "no_win";
+    reason: string;
   };
 
-  authorVoiceSeeds: {
-    primaryMemory: string;
-    verifiedInsight: string;
+  coreEngine: {
+    contradiction: string;
     behaviorLoop: string;
+    identityPressure: string;
+    noWinLoop: string;
   };
+
+  pain: {
+    surface: string;
+    real: string;
+    scenario: string;
+  };
+
+  beliefShift: {
+    from: string;
+    breakMoment: string;
+    to: string;
+  };
+
+  anchors: Array<{
+    scenario: string;
+    emotion: "fear" | "shame" | "ego" | "relief";
+    use: "hook" | "mid" | "proof";
+  }>;
+
+  execution: {
+    hook: string;
+    mid: string;
+    peak: string;
+    end: string;
+  };
+
+  authorControl: {
+    mode: "augment" | "replace" | "none";
+    overridePoint: string;
+  };
+
+  // ✅ MOVED HERE (logic hợp lý hơn MiniSynthesis)
+  ranking: {
+    top1: string;
+    top2: string;
+    top3: string;
+    reason: string;
+  };
+
+  confidenceNotes: string;
 }
 
 // ── Bước 4: TẠO SCRIPT VIDEO (Script Writing) ──

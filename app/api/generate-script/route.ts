@@ -1,38 +1,36 @@
-/**
- * API Bước 4: TẠO SCRIPT VIDEO (FULL MODULAR GENERATOR)
- * 6 sequential API calls
- * Base prompt + section specific rules
- * Natural speech constraint anti-AI pattern
- * Input mapping layer
- * Retry logic
- */
 import { NextRequest, NextResponse } from "next/server";
-// import { generateFullScript } from "@/app/lib/prompts/scriptGenerator";
+import { generateFullScript } from "@/app/lib/services/scriptGenerator";
+import { MapperData, VoicePreset } from "@/app/lib/prompts/scriptInputMapper";
 
 export async function POST(req: NextRequest) {
   try {
-    const { synthesis } = await req.json();
+    const { synthesis, extraction, research, preset } = await req.json();
 
     if (!synthesis || typeof synthesis !== "object") {
-      return NextResponse.json({ error: "synthesis (Step 3 result) is required." }, { status: 400 });
+      return NextResponse.json(
+        { error: "synthesis (Step 3 result) is required." },
+        { status: 400 }
+      );
     }
 
-    const result = {
-        status: "FINAL",
-        fullScript: "",
-        sections: ""
-      };
+    const mapperData: MapperData = {
+      synthesis,
+      extraction: extraction ?? {},
+      research:   research   ?? {},
+    };
 
-    return NextResponse.json({
-      result: {
-        status: "FINAL",
-        fullScript: result.fullScript,
-        sections: result.sections
-      }
-    });
+    const voicePreset: VoicePreset =
+      preset === "building" || preset === "raw" ? preset : "resigned";
+
+    const result = await generateFullScript(mapperData, voicePreset);
+
+    return NextResponse.json({ result });
 
   } catch (err: unknown) {
     console.error("[/api/generate-script]", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Unexpected error" }, { status: 500 });
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Unexpected error" },
+      { status: 500 }
+    );
   }
 }

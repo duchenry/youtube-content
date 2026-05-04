@@ -86,51 +86,66 @@ export default function Home() {
   const charCount = script.length;
   const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0;
 
-  async function handleAnalyze() {
-    if (!script.trim() || script.trim().length < 50) {
-      setError("Please paste a script with at least 50 characters.");
-      return;
-    }
-
-    setLoading(true);
-    setLoadingMessage("Đang phân tích cấu trúc kịch bản (Bước 1/2)...");
-    setError(null);
-    setSaveError(null);
-    setResult(null);
-    setActiveId(null);
-
-    try {
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ script, comments: comments.filter(c => c.trim()) }),
-      });
-
-      const json = await res.json();
-      if (!res.ok || json.error) throw new Error(json.error || "Something went wrong.");
-
-      const analysisResult: AnalysisResult = json.result;
-      setResult(analysisResult);
-
-      // Auto-save to Supabase
-      setSaving(true);
-      const savedId = await saveAnalysis(script, comments, analysisResult);
-      if (savedId) {
-        setActiveId(savedId);
-      } else {
-        setSaveError("Analysis complete, but failed to save to history.");
-      }
-      setSaving(false);
-
-      setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred.");
-    } finally {
-      setLoading(false);
-    }
+async function handleAnalyze() {
+  if (!script.trim() || script.trim().length < 50) {
+    setError("Please paste a script with at least 50 characters.");
+    return;
   }
+
+  setLoading(true);
+  setLoadingMessage("Đang phân tích toàn bộ pipeline...");
+  setError(null);
+  setSaveError(null);
+  setResult(null);
+  setActiveId(null);
+
+  try {
+    // ✅ SINGLE API CALL ONLY
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        script,
+        comments: comments.filter((c) => c.trim()),
+      }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok || json.error) {
+      throw new Error(json.error || "Analysis failed.");
+    }
+
+    const finalResult: AnalysisResult = json.result;
+
+    setResult(finalResult);
+
+    // 💾 SAVE
+    setSaving(true);
+
+    const savedId = await saveAnalysis(script, comments, finalResult);
+
+    if (savedId) {
+      setActiveId(savedId);
+    } else {
+      setSaveError("Analysis complete, but failed to save to history.");
+    }
+
+    setSaving(false);
+
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
+
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "An error occurred.");
+  } finally {
+    setLoading(false);
+  }
+}
 
   function handleSelectHistory(entry: HistoryEntry) {
     setResult(entry.result);
@@ -284,38 +299,38 @@ export default function Home() {
     finally { setStepLoading(false); }
   }
 
-  // async function handleStep4() {
-  //   if (!result || !synthesis) return;
-  //   setStepLoading(true); setError(null);
-  //   try {
-  //     const res = await fetch("/api/generate-script", {
-  //       method: "POST", headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ extraction: result, synthesis: synthesis }),
-  //     });
-  //     const json = await res.json();
-  //     if (!res.ok || json.error) throw new Error(json.error || "Step 4 failed");
+  async function handleStep4() {
+    if (!result || !synthesis) return;
+    setStepLoading(true); setError(null);
+    try {
+      const res = await fetch("/api/generate-script", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ extraction: result, synthesis: synthesis }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || "Step 4 failed");
 
-  //     if (activeId) {
-  //       console.log("[Step 4] Saving script to DB...");
-  //       const { error: supabaseError } = await supabase
-  //         .from("analyses")
-  //         .update({ generated_script: json.result })
-  //         .eq("id", activeId);
+      if (activeId) {
+        console.log("[Step 4] Saving script to DB...");
+        const { error: supabaseError } = await supabase
+          .from("analyses")
+          .update({ generated_script: json.result })
+          .eq("id", activeId);
 
-  //       if (supabaseError) {
-  //         console.error("[Step 4] Supabase Error:", supabaseError);
-  //         setError(`Database error: ${supabaseError.message}`);
-  //       } else {
-  //         console.log("[Step 4] ✅ SCRIPT SAVED TO DATABASE SUCCESSFULLY");
-  //         fetchHistory();
-  //       }
-  //     }
+        if (supabaseError) {
+          console.error("[Step 4] Supabase Error:", supabaseError);
+          setError(`Database error: ${supabaseError.message}`);
+        } else {
+          console.log("[Step 4] ✅ SCRIPT SAVED TO DATABASE SUCCESSFULLY");
+          fetchHistory();
+        }
+      }
 
-  //     setGeneratedScript(json.result);
-  //     setStep(4);
-  //   } catch (err) { setError(err instanceof Error ? err.message : "Step 4 failed"); }
-  //   finally { setStepLoading(false); }
-  // }
+      setGeneratedScript(json.result);
+      setStep(4);
+    } catch (err) { setError(err instanceof Error ? err.message : "Step 4 failed"); }
+    finally { setStepLoading(false); }
+  }
 
   const maxDone = generatedScript ? 4 : synthesis ? 3 : research ? 2 : result ? 1 : 0;
 
@@ -657,7 +672,7 @@ export default function Home() {
                 </>
               )}
 
-               {/* {step === 3 && synthesis && (
+               {step === 3 && synthesis && (
                  <>
                    <SynthesisDisplay data={synthesis} />
                    <div className="mt-6 flex justify-end">
@@ -669,7 +684,7 @@ export default function Home() {
                      </button>
                    </div>
                  </>
-               )} */}
+               )}
                
                {step === 4 && <ScriptDisplay data={generatedScript} />}
             </div>

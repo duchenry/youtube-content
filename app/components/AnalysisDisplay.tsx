@@ -69,7 +69,6 @@ export function AnalysisDisplay({ data }: Props) {
       r("Hook", "Confidence", d?.hook?.confidence || ""),
 
       r("Angle", "Claim", d?.angle?.claim || ""),
-      r("Angle", "Supporting Logic", Array.isArray(d?.angle?.supportingLogic) ? d.angle.supportingLogic.join(" | ") : ""),
       r("Angle", "Hidden Assumption", d?.angle?.hiddenAssumption || ""),
       r("Angle", "Confidence", d?.angle?.confidence || ""),
 
@@ -77,14 +76,8 @@ export function AnalysisDisplay({ data }: Props) {
       r("Core Truth", "Trigger Moment", d?.coreTruth?.triggerMoment || ""),
       r("Core Truth", "Confidence", d?.coreTruth?.confidence || ""),
 
-      r("Attention", "Pattern Break", d?.attention?.patternBreak || ""),
       r("Attention", "Retention Driver", d?.attention?.retentionDriver?.description || ""),
 
-      ...(Array.isArray(d?.structureDNA?.phases) ? d.structureDNA.phases.flatMap((p, i) => [
-        r(`Phase ${i + 1}`, "Name", p?.phase || ""),
-        r(`Phase ${i + 1}`, "Goal", p?.goal || ""),
-        r(`Phase ${i + 1}`, "Tactic", p?.tactic || ""),
-      ]) : []),
 
       r("Audience", "Profile", d?.audience?.profile || ""),
 
@@ -123,7 +116,7 @@ export function AnalysisDisplay({ data }: Props) {
   const TABS: { key: Tab; label: string }[] = [
     { key: "message", label: "Message" },
     { key: "mechanics", label: "Mechanics" },
-    { key: "structure", label: "Structure" },
+    // { key: "structure", label: "Structure" },
     { key: "audience", label: "Audience" },
   ];
 
@@ -164,7 +157,6 @@ export function AnalysisDisplay({ data }: Props) {
 
           <Card title="🎯 Angle" note="Luận điểm chính của video" open={!!open.angle} onToggle={() => toggle("angle")}>
             <FieldRow label="Claim" value={data.angle.claim} />
-            <Tags label="Supporting Logic" items={data.angle.supportingLogic} />
             <FieldRow label="Hidden Assumption" value={data.angle.hiddenAssumption} note="Điểm yếu có thể khai thác" />
             <FieldRow label="Confidence" value={data.angle.confidence} />
           </Card>
@@ -181,62 +173,14 @@ export function AnalysisDisplay({ data }: Props) {
       {tab === "mechanics" && (
         <div className="space-y-3 md:space-y-4">
           <Card title="👁️ Attention" note="Cách giữ chân viewer" open={!!open.attention} onToggle={() => toggle("attention")}>
-            <FieldRow label="Pattern Break" value={data.attention.patternBreak} />
-            <Tags label="Escalation" items={data.attention.escalation} />
             <FieldRow label="Retention Driver" value={data.attention.retentionDriver.description} />
             <FieldRow label="Driver Confidence" value={data.attention.retentionDriver.confidence} />
           </Card>
 
-          <Card title="🧪 Proof Mechanics" note="Cách xây dựng uy tín" open={!!open.proof} onToggle={() => toggle("proof")}>
-            <Tags label="Evidence Used" items={data.proofMechanics.evidenceUsed} />
-            <FieldRow label="Transferable Pattern" value={data.proofMechanics.transferablePattern.pattern} />
-            <FieldRow label="Pattern Confidence" value={data.proofMechanics.transferablePattern.confidence} />
+          <Card title="🎯 Priority" note="Yếu tố quan trọng nhất" open={!!open.priority} onToggle={() => toggle("priority")}>
+            <FieldRow label="Primary Driver" value={data.priority.primaryDriver} />
+            <FieldRow label="Why" value={data.priority.why} />
           </Card>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
-            <Card title="⚠️ Weak Points" note="Chỗ video mất người xem" open={!!open.weak} onToggle={() => toggle("weak")}>
-              <FieldRow label="Where It Loses Attention" value={data.weakPoints.whereItLosesAttention} />
-              <FieldRow label="Why" value={data.weakPoints.why} />
-            </Card>
-
-            <Card title="🎯 Priority" note="Yếu tố quan trọng nhất" open={!!open.priority} onToggle={() => toggle("priority")}>
-              <FieldRow label="Primary Driver" value={data.priority.primaryDriver} />
-              <FieldRow label="Why" value={data.priority.why} />
-            </Card>
-          </div>
-
-        </div>
-      )}
-
-      {/* == Tab: Structure == */}
-      {tab === "structure" && (
-        <div className="space-y-3 md:space-y-4">
-          <Card title="🧬 Structure DNA" note="Cấu trúc flow video" open={!!open.structure} onToggle={() => toggle("structure")}>
-            <div className="space-y-3 mt-4">
-              <p className="text-white text-sm font-semibold">📌 Phases</p>
-              {data.structureDNA.phases.map((p, i) => (
-                <div key={i} className="rounded-lg border border-[#262626] bg-[#0f0f0f] p-2.5 md:p-3">
-                  <FieldRow label="Phase" value={p.phase} />
-                  <FieldRow label="Goal" value={p.goal} />
-                  <FieldRow label="Tactic" value={p.tactic} />
-                  <FieldRow label="Source" value={p.source} />
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-3 mt-4">
-              <p className="text-white text-sm font-semibold">🔄 Retention Moments</p>
-              {data.structureDNA.retentionMoments.map((m, i) => (
-                <div key={i} className="rounded-lg border border-[#262626] bg-[#0f0f0f] p-2.5 md:p-3">
-                  <FieldRow label="Moment" value={m.moment} />
-                  <FieldRow label="Why It Works" value={m.whyItWorks} />
-                  <FieldRow label="Pattern" value={m.pattern} />
-                  <FieldRow label="Primary" value={m.isPrimary ? "✅ Yes" : "No"} />
-                </div>
-              ))}
-            </div>
-          </Card>
-
         </div>
       )}
 
@@ -264,12 +208,10 @@ export function AnalysisDisplay({ data }: Props) {
              </div>
           </Card>
 
-           <Card title="💬 Comment Patterns" note="Dữ liệu thực từ comments" open={!!open.comments} onToggle={() => toggle("comments")}>
-             <FieldRow label="Dominant Sentiment" value={data.audience.commentPatterns.dominantSentiment} />
-             <FieldRow label="Repeated Pain" value={data.audience.commentPatterns.repeatedPain} />
-             <Tags label="Language Fingerprint" items={data.audience.commentPatterns.languageFingerprint} />
-             <FieldRow label="Unspoken Need" value={data.audience.commentPatterns.unspokenNeed} />
-             <FieldRow label="Misunderstanding" value={data.audience.commentPatterns.misunderstanding} />
+           <Card title="💬 Comment Insight" note="Dữ liệu thực từ comments" open={!!open.comments} onToggle={() => toggle("comments")}>
+             <FieldRow label="Repeated Pain" value={data.audience.commentInsight.repeatedPain} />
+             <FieldRow label="Emotional Example" value={data.audience.commentInsight.emotionalExample} />
+             <FieldRow label="Unspoken Need" value={data.audience.commentInsight.unspokenNeed} />
            </Card>
 
            <Card title="📋 Raw Input Comments" note="Toàn bộ comments người dùng đã nhập vào" open={!!open.rawComments} onToggle={() => toggle("rawComments")}>

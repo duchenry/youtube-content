@@ -28,7 +28,11 @@ export async function POST(req: NextRequest) {
         ? JSON.stringify(authorInput, null, 2)
         : "None provided — infer entirely from Reddit + extraction"
     });
-    const parsed = await callModel(prompt, process.env.OPENAI_MODEL_ENRICH?.trim() || "gpt-4o-mini", Number(process.env.ENRICH_MAX_TOKENS || 8000));
+    const parsed = await callModel(
+      prompt,
+      process.env.CLAUDE_MODEL_ENRICH?.trim() || "claude-sonnet-4-6",
+      Number(process.env.ENRICH_MAX_TOKENS || 6000),
+    );
 
     return NextResponse.json({ result: normalizeSynthesis(parsed) });
   } catch (err: unknown) {

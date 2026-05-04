@@ -1,64 +1,45 @@
-/**
- * INPUT MAPPING LAYER
- * Chỉ map đúng field cần thiết cho từng section
- * KHÔNG inject toàn bộ object
- * Tuân thủ nguyên tắc: chỉ gửi đúng data phần đó cần
- */
+export function mapToScriptInputs(data: any) {
+  const research = data.research || {};
+  const synthesis = data.synthesis || {};
+  const extraction = data.extraction || {};
 
-export function buildSectionInput(section: string, data: any): Record<string, string> {
-  switch (section) {
+  return {
+    hook: {
+      rawPain: extraction?.audience?.painMap?.[0]?.pain ?? "",
+      contradiction: research?.primaryContradiction?.description ?? "",
+      falseBelief: synthesis?.coreEngine?.contradiction ?? "",
+    },
 
-    case "hook":
-      return {
-        rawPain: data.painArchitecture?.rawPain?.real || "",
-        surfacePain: data.painArchitecture?.rawPain?.surface || "",
-        contradiction: data.painArchitecture?.internalConflict?.know + " vs " + data.painArchitecture?.internalConflict?.cant || "",
-        egoThreat: data.viewerPsychology?.egoThreat || "",
-        falseBelief: data.painArchitecture?.falseBeliefCollapse?.belief || ""
-      };
+    setup: {
+      scenario: extraction?.audience?.painMap?.[0]?.realScenario ?? "",
+      behaviorLoop: synthesis?.coreEngine?.behaviorLoop ?? "",
+      behaviorCost: synthesis?.pain?.real ?? "",
+      constraint: synthesis?.pain?.scenario ?? "",
+    },
 
-    case "setup":
-      return {
-        surfacePain: data.painArchitecture?.rawPain?.surface || "",
-        realPain: data.painArchitecture?.rawPain?.real || "",
-        constraint: data.painArchitecture?.specificConstraint?.constraint || "",
-        scenario: data.painArchitecture?.rawPain?.redditEvidence || "",
-        example: data.platformTranslation?.[0]?.youtubeLanguage || ""
-      };
+    contradiction: {
+      optionAAction: research?.noWinLoops?.[0]?.optionA?.action ?? "",
+      optionACost: research?.noWinLoops?.[0]?.optionA?.longTermCost ?? "",
+      optionBAction: research?.noWinLoops?.[0]?.optionB?.action ?? "",
+      optionBCost: research?.noWinLoops?.[0]?.optionB?.longTermCost ?? "",
+      noWinAsymmetry: research?.noWinLoops?.[0]?.asymmetry ?? "",
+      fearIfNotAct: synthesis?.coreEngine?.identityPressure ?? "",
+    },
 
-    case "contradiction":
-      return {
-        contradiction: data.painArchitecture?.internalConflict?.know + " vs " + data.painArchitecture?.internalConflict?.cant || "",
-        noWinLoop: data.painArchitecture?.internalConflict?.redditEvidence || "",
-        behaviorLoop: data.platformTranslation?.[0]?.redditInsight || "",
-        emotionalDriver: data.painArchitecture?.resentment?.expression || "",
-        identityPressure: data.viewerPsychology?.shameTrigger || "",
-        hiddenTruth: data.differentiation?.blindSpot || ""
-      };
+    reframe: {
+      falseBelief: synthesis?.coreEngine?.contradiction ?? "",
+      crackMoment: synthesis?.beliefShift?.breakMoment ?? "",
+      hiddenTruth: synthesis?.beliefShift?.to ?? "",
+    },
 
-    case "reframe":
-      return {
-        falseBelief: data.painArchitecture?.falseBeliefCollapse?.belief || "",
-        crackMoment: data.painArchitecture?.falseBeliefCollapse?.crackMoment || "",
-        hiddenTruth: data.painArchitecture?.falseBeliefCollapse?.redditEvidence || "",
-        blindSpot: data.differentiation?.blindSpot || ""
-      };
+    solution: {
+      unspokenNeed: synthesis?.pain?.real ?? "",
+      behaviorLoop: synthesis?.coreEngine?.behaviorLoop ?? "",
+    },
 
-    case "solution":
-      return {
-        constraint: data.painArchitecture?.specificConstraint?.constraint || "",
-        behaviorLoop: data.platformTranslation?.[0]?.redditInsight || "",
-        emotionalDriver: data.contentBriefSeed?.emotionalArc || ""
-      };
-
-    case "close":
-      return {
-        coreTruth: data.painArchitecture?.falseBeliefCollapse?.belief || "",
-        egoThreat: data.viewerPsychology?.egoThreat || "",
-        identityShift: data.viewerPsychology?.identityShift || ""
-      };
-
-    default:
-      return {};
-  }
+    close: {
+      coreTruth: extraction?.coreTruth?.insight ?? "",
+      coreBelief: extraction?.viewerProfile?.coreBelief ?? "",
+    }
+  };
 }

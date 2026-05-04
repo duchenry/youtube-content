@@ -14,19 +14,14 @@ const INSUFFICIENT = "Insufficient data — need more comments";
 
 export function normalizeExtraction(raw: JsonRecord, comments: string[]): AnalysisResult {
   const hook = asRecord(raw.hook);
-  const hookQuality = asRecord(raw.hookQuality);
   const angle = asRecord(raw.angle);
   const ct = asRecord(raw.coreTruth);
   const att = asRecord(raw.attention);
   const rd = asRecord(att.retentionDriver);
-  const pm = asRecord(raw.proofMechanics);
-  const tp = asRecord(pm.transferablePattern);
-  const sd = asRecord(raw.structureDNA);
   const aud = asRecord(raw.audience);
-  const cp = asRecord(aud.commentPatterns);
-    const wp = asRecord(raw.weakPoints);
-    const pri = asRecord(raw.priority);
-    const vp = asRecord(raw.viewerProfile);
+  const ci = asRecord(aud.commentInsight);
+  const pri = asRecord(raw.priority);
+  const vp = asRecord(raw.viewerProfile);
  
   const tooFew = comments.length < 5; // ← dùng comments.length thay vì commentCount
  
@@ -37,13 +32,8 @@ export function normalizeExtraction(raw: JsonRecord, comments: string[]): Analys
       mechanism: asString(hook.mechanism),
       confidence: asConfidence(hook.confidence),
     },
-    hookQuality: {
-      strength: asString(hookQuality.strength),
-      risk: asString(hookQuality.risk),
-    },
     angle: {
       claim: asString(angle.claim),
-      supportingLogic: asStringArray(angle.supportingLogic),
       hiddenAssumption: asString(angle.hiddenAssumption),
       confidence: asConfidence(angle.confidence),
     },
@@ -53,23 +43,7 @@ export function normalizeExtraction(raw: JsonRecord, comments: string[]): Analys
       confidence: asConfidence(ct.confidence),
     },
     attention: {
-      patternBreak: asString(att.patternBreak),
-      escalation: asStringArray(att.escalation),
       retentionDriver: { description: asString(rd.description), confidence: asConfidence(rd.confidence) },
-    },
-    proofMechanics: {
-      evidenceUsed: asStringArray(pm.evidenceUsed),
-      transferablePattern: { pattern: asString(tp.pattern), confidence: asConfidence(tp.confidence) },
-    },
-    structureDNA: {
-      phases: (Array.isArray(sd.phases) ? sd.phases : []).map((item) => {
-        const p = asRecord(item);
-        return { phase: asString(p.phase) as "Hook" | "Build" | "Pivot" | "Close", goal: asString(p.goal), tactic: asString(p.tactic), source: asString(p.source) || "INFERRED" };
-      }),
-      retentionMoments: (Array.isArray(sd.retentionMoments) ? sd.retentionMoments : []).map((item) => {
-        const m = asRecord(item);
-        return { moment: asString(m.moment), whyItWorks: asString(m.whyItWorks), pattern: asString(m.pattern), isPrimary: Boolean(m.isPrimary) };
-      }),
     },
     audience: {
       profile: asString(aud.profile),
@@ -77,19 +51,12 @@ export function normalizeExtraction(raw: JsonRecord, comments: string[]): Analys
         const p = asRecord(item);
         return { pain: asString(p.pain), realScenario: asString(p.realScenario) };
       }),
-      commentPatterns: {
-        dominantSentiment: tooFew ? INSUFFICIENT : asString(cp.dominantSentiment),
-        repeatedPain: tooFew ? INSUFFICIENT : asString(cp.repeatedPain),
-        emotionalTriggers: tooFew ? [] : (Array.isArray(cp.emotionalTriggers) ? cp.emotionalTriggers : []).slice(0, 3).map((item) => {
-          const t = asRecord(item);
-          return { quote: asString(t.quote), emotion: asString(t.emotion), insight: asString(t.insight) };
-        }),
-        languageFingerprint: tooFew ? [] : asStringArray(cp.languageFingerprint),
-        unspokenNeed: tooFew ? INSUFFICIENT : asString(cp.unspokenNeed),
-        misunderstanding: tooFew ? INSUFFICIENT : asString(cp.misunderstanding),
+      commentInsight: {
+        repeatedPain: tooFew ? INSUFFICIENT : asString(ci.repeatedPain),
+        emotionalExample: tooFew ? INSUFFICIENT : asString(ci.emotionalExample),
+        unspokenNeed: tooFew ? INSUFFICIENT : asString(ci.unspokenNeed),
       },
     },
-    weakPoints: { whereItLosesAttention: asString(wp.whereItLosesAttention), why: asString(wp.why) },
     priority: { primaryDriver: asString(pri.primaryDriver), why: asString(pri.why) },
     viewerProfile: {
       ageRange: asString(vp.ageRange),
@@ -101,6 +68,102 @@ export function normalizeExtraction(raw: JsonRecord, comments: string[]): Analys
   };
 }
 
+
+// ── Step 2: Research Directive ──────────────────────────────
+
+export function normalizeResearch(raw: any): ResearchDirective {
+  const pc = raw?.primaryContradiction ?? {};
+
+  return {
+    primaryContradiction: {
+      type: pc.type,
+      description: pc.description,
+      searchInstinct: pc.searchInstinct,
+      whyItMatters: pc.whyItMatters ?? "",
+    },
+
+    searchInstincts: Array.isArray(raw?.searchInstincts) ? raw.searchInstincts : [],
+    painSignals: Array.isArray(raw?.painSignals) ? raw.painSignals : [],
+
+    ranking: raw?.ranking ?? {
+      top1: "",
+      top2: "",
+      top3: "",
+      reason: "",
+    },
+
+    confidence: raw?.confidence ?? "low",
+  };
+}
+// ── Step 3: Strategic Synthesis ─────────────────────────────
+
+export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
+  const fp = asRecord(raw.focusPriority);
+  const ce = asRecord(raw.coreEngine);
+  const pain = asRecord(raw.pain);
+  const bs = asRecord(raw.beliefShift);
+  const exec = asRecord(raw.execution);
+  const ac = asRecord(raw.authorControl);
+  const rk = asRecord(raw.ranking);
+
+  return {
+    focusPriority: {
+      primary: asString(fp.primary) as "contradiction" | "behavior" | "identity" | "no_win",
+      reason: asString(fp.reason),
+    },
+
+    coreEngine: {
+      contradiction: asString(ce.contradiction),
+      behaviorLoop: asString(ce.behaviorLoop),
+      identityPressure: asString(ce.identityPressure),
+      noWinLoop: asString(ce.noWinLoop),
+    },
+
+    pain: {
+      surface: asString(pain.surface),
+      real: asString(pain.real),
+      scenario: asString(pain.scenario),
+    },
+
+    beliefShift: {
+      from: asString(bs.from),
+      breakMoment: asString(bs.breakMoment),
+      to: asString(bs.to),
+    },
+
+    anchors: (Array.isArray(raw.anchors) ? raw.anchors : []).map((item) => {
+      const a = asRecord(item);
+      return {
+        scenario: asString(a.scenario),
+        emotion: asString(a.emotion) as "fear" | "shame" | "ego" | "relief",
+        use: asString(a.use) as "hook" | "mid" | "proof",
+      };
+    }),
+
+    execution: {
+      hook: asString(exec.hook),
+      mid: asString(exec.mid),
+      peak: asString(exec.peak),
+      end: asString(exec.end),
+    },
+
+    authorControl: {
+      mode: asString(ac.mode) as "augment" | "replace" | "none",
+      overridePoint: asString(ac.overridePoint),
+    },
+
+    // ✅ FIX MỚI: ranking
+    ranking: {
+      top1: asString(rk.top1),
+      top2: asString(rk.top2),
+      top3: asString(rk.top3),
+      reason: asString(rk.reason),
+    },
+
+    confidenceNotes: asString(raw.confidenceNotes),
+  };
+}
+
 // ── Step 4: Script Generation ──────────────────────────────
 
 export function normalizeScript(raw: JsonRecord): GeneratedScript {
@@ -109,7 +172,6 @@ export function normalizeScript(raw: JsonRecord): GeneratedScript {
   return {
     status: asString(raw.status) as "FINAL" | "DRAFT_ONLY",
     fullScript: asString(raw.fullScript),
-
     sections: {
       hook: { text: asString(sections?.hook?.text), wordCount: Number(sections?.hook?.wordCount) || 0 },
       setup: { text: asString(sections?.setup?.text), wordCount: Number(sections?.setup?.wordCount) || 0 },
@@ -118,191 +180,5 @@ export function normalizeScript(raw: JsonRecord): GeneratedScript {
       solution: { text: asString(sections?.solution?.text), wordCount: Number(sections?.solution?.wordCount) || 0 },
       close: { text: asString(sections?.close?.text), wordCount: Number(sections?.close?.wordCount) || 0 },
     }
-  };
-}
-
-// ── Step 2: Research Directive ──────────────────────────────
-
-export function normalizeResearch(raw: JsonRecord): ResearchDirective {
-  const pc = asRecord(raw.primaryContradiction);
-  return {
-    status: asString(raw.status) as "FINAL" | "DRAFT_ONLY",
-    viewerProfileQuality: asString(raw.viewerProfileQuality) as "STRONG" | "WEAK",
-    missingProfileFields: asStringArray(raw.missingProfileFields),
-    creatorStanceActive: Boolean(raw.creatorStanceActive),
-    confidenceNotes: asString(raw.confidenceNotes),
-    
-    creatorInterrogation: (Array.isArray(raw.creatorInterrogation) ? raw.creatorInterrogation : []).map((item) => {
-      const ci = asRecord(item);
-      return {
-        source: asString(ci.source) as "weakPoint" | "contestedClaim" | "commentGap",
-        triggerEvidence: asString(ci.triggerEvidence),
-        gapType: asString(ci.gapType) as "unaddressed_villain" | "contested_fact" | "deeper_pain" | "missed_contradiction",
-        whyThisOpens: asString(ci.whyThisOpens),
-        questionForCreator: asString(ci.questionForCreator),
-      };
-    }),
-
-    primaryContradiction: {
-      type: asString(pc.type) as "know_vs_do" | "belief_collapse" | "identity_pressure" | "forced_tradeoff" | "no_win_loop",
-      description: asString(pc.description),
-      whyThisMatters: asString(pc.whyThisMatters),
-      groundingTrace: (() => {
-        const gt = asRecord(pc.groundingTrace);
-        return {
-          mappedTo: asString(gt.mappedTo),
-          exactReference: asString(gt.exactReference),
-        };
-      })()
-    },
-    contradictionSearch: (Array.isArray(raw.contradictionSearch) ? raw.contradictionSearch : []).slice(0, 6).map((item) => {
-      const d = asRecord(item);
-      return {
-        type: asString(d.type) as "know_vs_do" | "belief_collapse" | "identity_pressure" | "failed_outcome" | "no_win_loop",
-        targetAssumption: asString(d.targetAssumption),
-        direction: asString(d.direction),
-        query: asString(d.query),
-        subreddits: asStringArray(d.subreddits),
-        whatToFind: asString(d.whatToFind),
-        successSignal: asString(d.successSignal),
-        severity: asString(d.severity) as "low" | "medium" | "high",
-        severityReason: asString(d.severityReason),
-        whyItBreaksTheVideo: asString(d.whyItBreaksTheVideo),
-        counterAngleValue: asString(d.counterAngleValue) || "NOT_APPLICABLE",
-        groundingTrace: (() => {
-          const gt = asRecord(d.groundingTrace);
-          return {
-            mappedTo: asString(gt.mappedTo),
-            exactReference: asString(gt.exactReference),
-          };
-        })()
-      };
-    }),
-    behaviorPatterns: (Array.isArray(raw.behaviorPatterns) ? raw.behaviorPatterns : []).slice(0, 5).map((item) => {
-      const d = asRecord(item);
-      return {
-        pattern: asString(d.pattern),
-        exampleLanguage: asStringArray(d.exampleLanguage),
-        actionLoop: asString(d.actionLoop),
-        cost: asString(d.cost),
-        emotionalDriver: asString(d.emotionalDriver) as "fear" | "shame" | "ego" | "comparison" | "avoidance",
-        hiddenTruth: asString(d.hiddenTruth),
-        groundingTrace: (() => {
-          const gt = asRecord(d.groundingTrace ?? {});
-          return {
-            mappedTo: asString(gt.mappedTo),
-            exactReference: asString(gt.exactReference) || "NO_DIRECT_REFERENCE",
-          };
-        })()
-      };
-    }),
-    identityPressure: (Array.isArray(raw.identityPressure) ? raw.identityPressure : []).slice(0, 4).map((item) => {
-      const d = asRecord(item);
-      return {
-        identity: asString(d.identity),
-        pressure: asString(d.pressure),
-        exampleLanguage: asStringArray(d.exampleLanguage),
-        fearIfNotAct: asString(d.fearIfNotAct),
-        whyIrrational: asString(d.whyIrrational),
-        groundingTrace: (() => {
-          const gt = asRecord(d.groundingTrace ?? {});
-          return {
-            mappedTo: asString(gt.mappedTo),
-            exactReference: asString(gt.exactReference) || "NO_DIRECT_REFERENCE",
-          };
-        })()
-      };
-    }),
-    failureStories: (Array.isArray(raw.failureStories) ? raw.failureStories : []).slice(0, 4).map((item) => {
-      const d = asRecord(item);
-      return {
-        query: asString(d.query),
-        subreddits: asStringArray(d.subreddits),
-        whatToFind: asString(d.whatToFind),
-        signal: asString(d.signal),
-        competitorClaimTargeted: asString(d.competitorClaimTargeted),
-        groundingTrace: (() => {
-          const gt = asRecord(d.groundingTrace ?? {});
-          return {
-            mappedTo: asString(gt.mappedTo),
-            exactReference: asString(gt.exactReference) || "NO_DIRECT_REFERENCE",
-          };
-        })()
-      };
-    }),
-    noWinLoops: (Array.isArray(raw.noWinLoops) ? raw.noWinLoops : []).slice(0, 3).map((item) => {
-      const d = asRecord(item);
-      const oa = asRecord(d.optionA);
-      const ob = asRecord(d.optionB);
-      const gt = asRecord(d.groundingTrace);
-      return {
-        situation: asString(d.situation),
-        optionA: {
-          action: asString(oa.action),
-          costType: asString(oa.costType) as "financial" | "social" | "identity" | "time",
-          immediateFeel: asString(oa.immediateFeel),
-          longTermCost: asString(oa.longTermCost),
-        },
-        optionB: {
-          action: asString(ob.action),
-          costType: asString(ob.costType) as "financial" | "social" | "identity" | "time",
-          immediateFeel: asString(ob.immediateFeel),
-          longTermCost: asString(ob.longTermCost),
-        },
-        asymmetry: asString(d.asymmetry),
-        exampleLanguage: asStringArray(d.exampleLanguage),
-        whyPowerful: asString(d.whyPowerful),
-        groundingTrace: {
-          mappedTo: asString(gt.mappedTo),
-          exactReference: asString(gt.exactReference),
-        },
-      };
-    }),
-  };
-}
-
-// ── Step 3: Strategic Synthesis ─────────────────────────────
-
-export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
-  const vp = asRecord(raw.viewerPsychology);
-  const pa = asRecord(raw.painArchitecture);
-  const rp = asRecord(pa.rawPain);
-  const rs = asRecord(pa.resentment);
-  const fb = asRecord(pa.falseBeliefCollapse);
-  const sc = asRecord(pa.specificConstraint);
-  const ic = asRecord(pa.internalConflict);
-  const it = asRecord(pa.identityThreat);
-  const diff = asRecord(raw.differentiation);
-  const hs = asRecord(raw.hookStrategy);
-  const cbs = asRecord(raw.contentBriefSeed);
-  const qg = asRecord(raw.qualityGate);
-
-  return {
-    viewerPsychology: { egoThreat: asString(vp.egoThreat), identityShift: asString(vp.identityShift), shameTrigger: asString(vp.shameTrigger) },
-    painArchitecture: {
-      rawPain: { surface: asString(rp.surface), real: asString(rp.real), redditEvidence: asString(rp.redditEvidence) },
-      resentment: { target: asString(rs.target), expression: asString(rs.expression), redditEvidence: asString(rs.redditEvidence) },
-      falseBeliefCollapse: { belief: asString(fb.belief), crackMoment: asString(fb.crackMoment), redditEvidence: asString(fb.redditEvidence) },
-      specificConstraint: { constraint: asString(sc.constraint), whyItMatters: asString(sc.whyItMatters), redditEvidence: asString(sc.redditEvidence) },
-      internalConflict: { know: asString(ic.know), cant: asString(ic.cant), redditEvidence: asString(ic.redditEvidence) },
-      identityThreat: { admission: asString(it.admission), avoidance: asString(it.avoidance), redditEvidence: asString(it.redditEvidence) },
-    },
-    platformTranslation: (Array.isArray(raw.platformTranslation) ? raw.platformTranslation : []).slice(0, 4).map((item) => {
-      const t = asRecord(item);
-      return { redditInsight: asString(t.redditInsight), emotion: asString(t.emotion), youtubeLanguage: asString(t.youtubeLanguage), intensity: asString(t.intensity) };
-    }),
-    differentiation: { competitorVoice: asString(diff.competitorVoice), blindSpot: asString(diff.blindSpot), unownedAngle: asString(diff.unownedAngle), voiceOpportunity: asString(diff.voiceOpportunity) },
-    hookStrategy: { type: asString(hs.type), targetEmotion: asString(hs.targetEmotion), falseBeliefHook: asString(hs.falseBeliefHook) },
-    contentBriefSeed: { contentAngle: asString(cbs.contentAngle), emotionalArc: asString(cbs.emotionalArc), keyDifferentiator: asString(cbs.keyDifferentiator), avoidList: asStringArray(cbs.avoidList) },
-    qualityGate: { painDepth: asString(qg.painDepth), resentmentFound: asString(qg.resentmentFound), beliefIdentified: asString(qg.beliefIdentified), constraintSpecific: asString(qg.constraintSpecific), conflictPresent: asString(qg.conflictPresent), hookStrength: asString(qg.hookStrength), novelty: asString(qg.novelty), rawVoiceSample: asString(qg.rawVoiceSample), authorInputUsed: (asString(qg.authorInputUsed) as "YES" | "NO" | "NOT_PROVIDED") || "NOT_PROVIDED" },
-
-    authorVoiceSeeds: (() => {
-      const avs = asRecord(raw.authorVoiceSeeds ?? {});
-      return {
-        primaryMemory: asString(avs.primaryMemory),
-        verifiedInsight: asString(avs.verifiedInsight),
-        behaviorLoop: asString(avs.behaviorLoop),
-      };
-    })()
   };
 }

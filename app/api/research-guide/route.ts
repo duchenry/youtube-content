@@ -10,7 +10,7 @@ import { normalizeResearch } from "@/app/lib/normalizers";
 
 export async function POST(req: NextRequest) {
   try {
-    const { extraction, creatorAnswers } = await req.json();
+    const { extraction } = await req.json();
     if (!extraction || typeof extraction !== "object") {
       return NextResponse.json({ error: "extraction (Step 1 result) is required." }, { status: 400 });
     }
@@ -18,12 +18,17 @@ export async function POST(req: NextRequest) {
     const prompt = renderPromptTemplate(RESEARCH_PROMPT, {
       EXTRACTION_JSON: JSON.stringify(extraction, null, 2),
       VIEWER_PROFILE: JSON.stringify(extraction.viewerProfile, null, 2),
-      CREATOR_ANSWERS_JSON: creatorAnswers ? JSON.stringify(creatorAnswers, null, 2) : "",
     });
-    // const parsed = await callModel(prompt, process.env.OPENAI_MODEL_RESEARCH?.trim() || "gpt-4o-mini", Number(process.env.RESEARCH_MAX_TOKENS || 3000));
-    const parsed = await callModel(prompt, process.env.OPENAI_MODEL_RESEARCH?.trim() || "gpt-4.1", 4000);
 
-    return NextResponse.json({ result: normalizeResearch(parsed) });
+    const parsed = await callModel(
+      prompt,
+      process.env.CLAUDE_MODEL_RESEARCH?.trim() || "claude-sonnet-4-6",
+      2000,
+    );
+
+    return NextResponse.json({ 
+      result: normalizeResearch(parsed) 
+    });
   } catch (err: unknown) {
     console.error("[/api/research-guide]", err);
     return NextResponse.json({ error: err instanceof Error ? err.message : "Unexpected error" }, { status: 500 });

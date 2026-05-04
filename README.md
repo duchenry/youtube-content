@@ -1,6 +1,6 @@
 # YouTube Script Analyzer
 
-Next.js app that reverse-engineers viral YouTube scripts using GPT-4o-mini.
+Next.js app that reverse-engineers viral YouTube scripts using Claude 3.5 Sonnet (via Anthropic API).
 All analyses are **automatically saved to Supabase** and accessible via a sidebar.
 
 ---
@@ -9,7 +9,7 @@ All analyses are **automatically saved to Supabase** and accessible via a sideba
 
 | Secret | Where it lives | Exposed to browser? |
 |---|---|---|
-| `OPENAI_API_KEY` | `.env.local` (server-only) | ❌ Never |
+| `ANTHROPIC_API_KEY` | `.env.local` (server-only) | ❌ Never |
 | `NEXT_PUBLIC_SUPABASE_URL` | `.env.local` | ✅ Safe (public) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `.env.local` | ✅ Safe (RLS protects data) |
 
@@ -33,7 +33,7 @@ npm install
 
 ```bash
 cp .env.example .env.local
-# Fill in OPENAI_API_KEY, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+# Fill in ANTHROPIC_API_KEY, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
 
 ### 4. Run
@@ -59,4 +59,4 @@ Add all 3 env vars in Vercel dashboard → Settings → Environment Variables.
 
 ## Stack
 
-Next.js 14 · TypeScript · Tailwind · OpenAI SDK · Supabase · GPT-4o-mini
+Next.js 14 · TypeScript · Tailwind · Anthropic SDK · Supabase · Claude 3.5 Sonnet

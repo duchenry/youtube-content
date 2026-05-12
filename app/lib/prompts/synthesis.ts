@@ -86,6 +86,20 @@ OUTPUT SCHEMA (STRICT)
   },
 
   "confidenceNotes": "short reason for confidence"
+  "scriptBridge": {
+  "optionA": {
+    "action": "what character does / considers",
+    "cost": "specific consequence — object, number, or outcome"
+  },
+  "optionB": {
+    "action": "the alternative",
+    "cost": "why this also fails"
+  },
+  "noWinAsymmetry": "one sentence: why both options are unacceptable",
+  "unspokenNeed": "what character actually needs vs what they say they need",
+  "constraint": "structural reason — not personal failure",
+  "coreTruth": "the one thing the script exists to prove true"
+}
 }
 
 ━━━━━━━━━━━━━━━━━━━━━
@@ -105,4 +119,12 @@ do not repeat same idea across fields
 
 5. MUST BE SCRIPT-READY:
 everything must map to hook / mid / peak / end
+━━━━━━━━━━━━━━━━━━━━━
+
+GROUNDING:
+- pain.scenario: must contain 1 object + 1 number from REDDIT_DATA or EXTRACTION_JSON
+- voiceProfile.physicalAnchors: at least 1 must be verbatim detail from input data
+- scriptBridge.constraint: must sound structural, never personal
+  BAD: "he can't afford it"
+  GOOD: "the math says 2027 and 2027 keeps moving"
 `

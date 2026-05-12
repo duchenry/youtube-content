@@ -10,7 +10,7 @@ import { StepBar } from "./components/StepBar";
 import { LoadingSkeleton } from "@/app/components/LoadingSkeleton";
 import { HistorySidebar } from "@/app/components/HistorySidebar";
 import { useHistory, HistoryEntry } from "./lib/useHistory";
-import { normalizeResearch, normalizeSynthesis } from "./lib/normalizers";
+import { normalizeResearch, normalizeScript, normalizeSynthesis } from "./lib/normalizers";
 import { supabase } from "./lib/supabase";
 
 const SCRIPT_PLACEHOLDER = `Paste your YouTube script here...
@@ -72,7 +72,6 @@ export default function Home() {
     } catch { /* corrupt data — ignore */ }
     setHydrated(true);
   }, []);
-
   // ── Persist session to localStorage on change ──
   useEffect(() => {
     if (!hydrated) return;
@@ -163,7 +162,12 @@ async function handleAnalyze() {
     const hasGeneratedScript = !!entry.generated_script;
     setResearch(entry.research || null);
     setSynthesis(entry.synthesis || null);
-    setGeneratedScript(entry.generated_script || null);
+    setGeneratedScript(
+  entry.generated_script
+    ? normalizeScript(entry.generated_script as any)
+    : null
+);
+
 
     // Parse reddit_raw back into structured entries if available
     if (entry.reddit_raw) {
@@ -197,6 +201,8 @@ async function handleAnalyze() {
     await deleteAnalysis(id);
     if (activeId === id) handleNew();
   }
+  console.log("research", research)
+  console.log("synthesis", synthesis)
   
   async function handleStep2() {
     if (!result) return;
@@ -299,38 +305,49 @@ async function handleAnalyze() {
     finally { setStepLoading(false); }
   }
 
-  async function handleStep4() {
-    if (!result || !synthesis) return;
-    setStepLoading(true); setError(null);
-    try {
-      const res = await fetch("/api/generate-script", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ extraction: result, synthesis: synthesis }),
-      });
-      const json = await res.json();
-      if (!res.ok || json.error) throw new Error(json.error || "Step 4 failed");
+ async function handleStep4() {
+  if (!result || !synthesis) return;
 
-      if (activeId) {
-        console.log("[Step 4] Saving script to DB...");
-        const { error: supabaseError } = await supabase
-          .from("analyses")
-          .update({ generated_script: json.result })
-          .eq("id", activeId);
+  setStepLoading(true);
+  setError(null);
 
-        if (supabaseError) {
-          console.error("[Step 4] Supabase Error:", supabaseError);
-          setError(`Database error: ${supabaseError.message}`);
-        } else {
-          console.log("[Step 4] ✅ SCRIPT SAVED TO DATABASE SUCCESSFULLY");
-          fetchHistory();
-        }
-      }
+  try {
+    const res = await fetch("/api/generate-script", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        extraction: result,
+        research,
+        synthesis,
+        id: activeId, // 🔥 truyền id nếu có
+      }),
+    });
 
-      setGeneratedScript(json.result);
-      setStep(4);
-    } catch (err) { setError(err instanceof Error ? err.message : "Step 4 failed"); }
-    finally { setStepLoading(false); }
+    const json = await res.json();
+
+    if (!res.ok || json.error) {
+      throw new Error(json.error || "Step 4 failed");
+    }
+
+    const normalized = normalizeScript(json.result);
+
+    // ✅ 🔥 CẬP NHẬT ID CHUẨN
+    if (!activeId && json.id) {
+      setActiveId(json.id);
+    }
+
+    // ❌ REMOVE HOÀN TOÀN đoạn này
+    // supabase update ở đây là SAI
+
+    setGeneratedScript(normalized);
+    setStep(4);
+
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Step 4 failed");
+  } finally {
+    setStepLoading(false);
   }
+}
 
   const maxDone = generatedScript ? 4 : synthesis ? 3 : research ? 2 : result ? 1 : 0;
 
@@ -686,7 +703,7 @@ async function handleAnalyze() {
                  </>
                )}
                
-               {step === 4 && <ScriptDisplay data={generatedScript} />}
+               {step === 4 && <ScriptDisplay data={generatedScript} analysisId={activeId}/>}
             </div>
           )}
 

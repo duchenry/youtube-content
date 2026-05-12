@@ -5,14 +5,32 @@
  * - normalizeResearch: Bước 2 (hướng dẫn nghiên cứu Reddit)
  * - normalizeSynthesis: Bước 3 (tổng hợp chiến lược)
  */
-import type { AnalysisResult, ResearchDirective, StrategicSynthesis, GeneratedScript } from "./types";
-import { asRecord, asString, asStringArray, asConfidence, type JsonRecord } from "./openai";
+
+import type {
+  AnalysisResult,
+  ResearchDirective,
+  StrategicSynthesis,
+  GeneratedScript,
+} from "./types";
+
+import {
+  asRecord,
+  asString,
+  asStringArray,
+  asConfidence,
+  type JsonRecord,
+} from "./openai";
+
+import { SECTION_ORDER } from "./prompts/scriptGenerator";
 
 const INSUFFICIENT = "Insufficient data — need more comments";
 
 // ── Step 1: Extraction ──────────────────────────────────────
 
-export function normalizeExtraction(raw: JsonRecord, comments: string[]): AnalysisResult {
+export function normalizeExtraction(
+  raw: JsonRecord,
+  comments: string[]
+): AnalysisResult {
   const hook = asRecord(raw.hook);
   const angle = asRecord(raw.angle);
   const ct = asRecord(raw.coreTruth);
@@ -22,52 +40,82 @@ export function normalizeExtraction(raw: JsonRecord, comments: string[]): Analys
   const ci = asRecord(aud.commentInsight);
   const pri = asRecord(raw.priority);
   const vp = asRecord(raw.viewerProfile);
- 
-  const tooFew = comments.length < 5; // ← dùng comments.length thay vì commentCount
- 
+
+  const tooFew = comments.length < 5;
+
   return {
     hook: {
       raw: asString(hook.raw),
-      type: asString(hook.type) as "Curiosity" | "Pain" | "Question" | "Story",
+      type: asString(hook.type) as
+        | "Curiosity"
+        | "Pain"
+        | "Question"
+        | "Story",
       mechanism: asString(hook.mechanism),
       confidence: asConfidence(hook.confidence),
     },
+
     angle: {
       claim: asString(angle.claim),
       hiddenAssumption: asString(angle.hiddenAssumption),
       confidence: asConfidence(angle.confidence),
     },
+
     coreTruth: {
       insight: asString(ct.insight),
       triggerMoment: asString(ct.triggerMoment),
       confidence: asConfidence(ct.confidence),
     },
+
     attention: {
-      retentionDriver: { description: asString(rd.description), confidence: asConfidence(rd.confidence) },
-    },
-    audience: {
-      profile: asString(aud.profile),
-      painMap: (Array.isArray(aud.painMap) ? aud.painMap : []).map((item) => {
-        const p = asRecord(item);
-        return { pain: asString(p.pain), realScenario: asString(p.realScenario) };
-      }),
-      commentInsight: {
-        repeatedPain: tooFew ? INSUFFICIENT : asString(ci.repeatedPain),
-        emotionalExample: tooFew ? INSUFFICIENT : asString(ci.emotionalExample),
-        unspokenNeed: tooFew ? INSUFFICIENT : asString(ci.unspokenNeed),
+      retentionDriver: {
+        description: asString(rd.description),
+        confidence: asConfidence(rd.confidence),
       },
     },
-    priority: { primaryDriver: asString(pri.primaryDriver), why: asString(pri.why) },
+
+    audience: {
+      profile: asString(aud.profile),
+
+      painMap: (Array.isArray(aud.painMap) ? aud.painMap : []).map((item) => {
+        const p = asRecord(item);
+
+        return {
+          pain: asString(p.pain),
+          realScenario: asString(p.realScenario),
+        };
+      }),
+
+      commentInsight: {
+        repeatedPain: tooFew
+          ? INSUFFICIENT
+          : asString(ci.repeatedPain),
+
+        emotionalExample: tooFew
+          ? INSUFFICIENT
+          : asString(ci.emotionalExample),
+
+        unspokenNeed: tooFew
+          ? INSUFFICIENT
+          : asString(ci.unspokenNeed),
+      },
+    },
+
+    priority: {
+      primaryDriver: asString(pri.primaryDriver),
+      why: asString(pri.why),
+    },
+
     viewerProfile: {
       ageRange: asString(vp.ageRange),
       incomeOrSituation: asString(vp.incomeOrSituation),
       coreBelief: asString(vp.coreBelief),
       recentPainTrigger: asString(vp.recentPainTrigger),
     },
-    inputComments: comments, // ← thêm field này để thoả mãn AnalysisResult type
+
+    inputComments: comments,
   };
 }
-
 
 // ── Step 2: Research Directive ──────────────────────────────
 
@@ -82,8 +130,13 @@ export function normalizeResearch(raw: any): ResearchDirective {
       whyItMatters: pc.whyItMatters ?? "",
     },
 
-    searchInstincts: Array.isArray(raw?.searchInstincts) ? raw.searchInstincts : [],
-    painSignals: Array.isArray(raw?.painSignals) ? raw.painSignals : [],
+    searchInstincts: Array.isArray(raw?.searchInstincts)
+      ? raw.searchInstincts
+      : [],
+
+    painSignals: Array.isArray(raw?.painSignals)
+      ? raw.painSignals
+      : [],
 
     ranking: raw?.ranking ?? {
       top1: "",
@@ -95,9 +148,12 @@ export function normalizeResearch(raw: any): ResearchDirective {
     confidence: raw?.confidence ?? "low",
   };
 }
+
 // ── Step 3: Strategic Synthesis ─────────────────────────────
 
-export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
+export function normalizeSynthesis(
+  raw: JsonRecord
+): StrategicSynthesis {
   const fp = asRecord(raw.focusPriority);
   const ce = asRecord(raw.coreEngine);
   const pain = asRecord(raw.pain);
@@ -108,7 +164,12 @@ export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
 
   return {
     focusPriority: {
-      primary: asString(fp.primary) as "contradiction" | "behavior" | "identity" | "no_win",
+      primary: asString(fp.primary) as
+        | "contradiction"
+        | "behavior"
+        | "identity"
+        | "no_win",
+
       reason: asString(fp.reason),
     },
 
@@ -131,12 +192,26 @@ export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
       to: asString(bs.to),
     },
 
-    anchors: (Array.isArray(raw.anchors) ? raw.anchors : []).map((item) => {
+    anchors: (
+      Array.isArray(raw.anchors)
+        ? raw.anchors
+        : []
+    ).map((item) => {
       const a = asRecord(item);
+
       return {
         scenario: asString(a.scenario),
-        emotion: asString(a.emotion) as "fear" | "shame" | "ego" | "relief",
-        use: asString(a.use) as "hook" | "mid" | "proof",
+
+        emotion: asString(a.emotion) as
+          | "fear"
+          | "shame"
+          | "ego"
+          | "relief",
+
+        use: asString(a.use) as
+          | "hook"
+          | "mid"
+          | "proof",
       };
     }),
 
@@ -148,11 +223,14 @@ export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
     },
 
     authorControl: {
-      mode: asString(ac.mode) as "augment" | "replace" | "none",
+      mode: asString(ac.mode) as
+        | "augment"
+        | "replace"
+        | "none",
+
       overridePoint: asString(ac.overridePoint),
     },
 
-    // ✅ FIX MỚI: ranking
     ranking: {
       top1: asString(rk.top1),
       top2: asString(rk.top2),
@@ -160,25 +238,47 @@ export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
       reason: asString(rk.reason),
     },
 
+    // ✅ FIX: thêm field bị thiếu
+    physicalDetail: Array.isArray(raw.physicalDetail)
+      ? raw.physicalDetail.map((item) => asString(item))
+      : [],
+
     confidenceNotes: asString(raw.confidenceNotes),
   };
 }
 
 // ── Step 4: Script Generation ──────────────────────────────
 
-export function normalizeScript(raw: JsonRecord): GeneratedScript {
-  const sections = raw.sections as any;
+export function normalizeScript(
+  raw: JsonRecord
+): GeneratedScript {
+  const sections = (raw.sections ?? {}) as Record<string, any>;
+
+  function normalizeSection(key: string) {
+    const s = sections[key] ?? {};
+
+    return {
+      text: asString(s.text),
+      wordCount: Number(s.wordCount) || 0,
+    };
+  }
 
   return {
-    status: asString(raw.status) as "FINAL" | "DRAFT_ONLY",
+    id: asString(raw.id),
+    status:
+      raw.status === "FINAL"
+        ? "FINAL"
+        : "DRAFT",
+
     fullScript: asString(raw.fullScript),
+
     sections: {
-      hook: { text: asString(sections?.hook?.text), wordCount: Number(sections?.hook?.wordCount) || 0 },
-      setup: { text: asString(sections?.setup?.text), wordCount: Number(sections?.setup?.wordCount) || 0 },
-      contradiction: { text: asString(sections?.contradiction?.text), wordCount: Number(sections?.contradiction?.wordCount) || 0 },
-      reframe: { text: asString(sections?.reframe?.text), wordCount: Number(sections?.reframe?.wordCount) || 0 },
-      solution: { text: asString(sections?.solution?.text), wordCount: Number(sections?.solution?.wordCount) || 0 },
-      close: { text: asString(sections?.close?.text), wordCount: Number(sections?.close?.wordCount) || 0 },
-    }
+      hook: normalizeSection("hook"),
+      setup: normalizeSection("setup"),
+      contradiction: normalizeSection("contradiction"),
+      reframe: normalizeSection("reframe"),
+      solution: normalizeSection("solution"),
+      close: normalizeSection("close"),
+    },
   };
 }

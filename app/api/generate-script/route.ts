@@ -1,35 +1,80 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { generateFullScript } from "@/app/lib/services/scriptGenerator";
-import { MapperData, VoicePreset } from "@/app/lib/prompts/scriptInputMapper";
+import { supabase } from "@/app/lib/supabase";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
+  let analysisId: string | null = null;
+  
   try {
-    const { synthesis, extraction, research, preset } = await req.json();
+    const body = await req.json();
+    
+    const data = body.data ?? body;
+    const id = body.id;
+    console.log("data", data)
+    
+    if (!data) throw new Error("Missing data");
 
-    if (!synthesis || typeof synthesis !== "object") {
-      return NextResponse.json(
-        { error: "synthesis (Step 3 result) is required." },
-        { status: 400 }
-      );
+    // ✅ reuse nếu có id
+    if (id) {
+      analysisId = id;
+
+      const { error } = await supabase
+        .from("analyses")
+        .update({
+          result: data,
+          status: "PROCESSING",
+        })
+        .eq("id", analysisId);
+        
+        if (error) throw error;
+      } else {
+        // ✅ create nếu chưa có
+        const { data: row, error } = await supabase
+        .from("analyses")
+        .insert({
+          result: data,
+          status: "PROCESSING",
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      analysisId = row.id;
     }
 
-    const mapperData: MapperData = {
-      synthesis,
-      extraction: extraction ?? {},
-      research:   research   ?? {},
-    };
+    if (!analysisId) throw new Error("No analysisId");
 
-    const voicePreset: VoicePreset =
-      preset === "building" || preset === "raw" ? preset : "resigned";
+    // ✅ generate
+    const result = await generateFullScript(data, analysisId);
+    // ✅ save
+    const { error: updateError } = await supabase
+      .from("analyses")
+      .update({
+        generated_script: result,
+        status: "FINAL",
+      })
+      .eq("id", analysisId);
 
-    const result = await generateFullScript(mapperData, voicePreset);
+    if (updateError) throw updateError;
 
-    return NextResponse.json({ result });
+    return NextResponse.json({
+      result,
+      id: analysisId,
+    });
 
-  } catch (err: unknown) {
-    console.error("[/api/generate-script]", err);
+  } catch (err: any) {
+    console.error(err);
+
+    if (analysisId) {
+      await supabase
+        .from("analyses")
+        .update({ status: "ERROR" })
+        .eq("id", analysisId);
+    }
+
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unexpected error" },
+      { error: err.message || "Error" },
       { status: 500 }
     );
   }

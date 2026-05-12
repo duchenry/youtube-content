@@ -1,258 +1,450 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import type { GeneratedScript } from "@/app/lib/types";
+import { useState, useEffect } from "react";
+import {
+  EvaluationEdit,
+  SECTION_KEYS,
+  SectionKey,
+  type GeneratedScript,
+} from "@/app/lib/types";
+import { supabase } from "@/app/lib/supabase";
 
-// ─────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────
+type SectionMap = GeneratedScript["sections"];
 
-type SectionKey = keyof GeneratedScript["sections"];
-
-interface SectionMeta {
-  key: SectionKey;
-  label: string;
-  targetWords: string;
-}
-
-// ─────────────────────────────────────────────────────────────
-// CONSTANTS
-// ─────────────────────────────────────────────────────────────
-
-const SECTIONS: SectionMeta[] = [
-  { key: "hook",          label: "Hook",          targetWords: "180–220w" },
-  { key: "setup",         label: "Setup",         targetWords: "350–450w" },
-  { key: "contradiction", label: "Contradiction",  targetWords: "450–600w" },
-  { key: "reframe",       label: "Reframe",        targetWords: "260–340w" },
-  { key: "solution",      label: "Solution",       targetWords: "320–420w" },
-  { key: "close",         label: "Close",          targetWords: "150–200w" },
-];
-
-// ─────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────
-
-function downloadText(content: string, filename: string) {
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  setTimeout(() => {
-    a.click();
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-      if (document.body.contains(a)) document.body.removeChild(a);
-    }, 150);
-  }, 0);
-}
-
-function buildDownloadContent(data: GeneratedScript): string {
-  const divider = "─".repeat(64);
-  const lines: string[] = [
-    "YOUTUBE SCRIPT", divider, "", "FULL SCRIPT", divider, "",
-    data.fullScript, "", "",
-    "RAW SECTIONS", divider,
-  ];
-  for (const { key, label } of SECTIONS) {
-    const { text, wordCount } = data.sections[key];
-    lines.push("", `${label.toUpperCase()}  (${wordCount}w)`, divider, "", text);
-  }
-  lines.push("", divider, `Generated: ${new Date().toLocaleString("vi-VN")}`);
-  return lines.join("\n");
-}
-
-// ─────────────────────────────────────────────────────────────
-// SMALL COMPONENTS
-// ─────────────────────────────────────────────────────────────
-
-function CopyButton({ getText }: { getText: () => string }) {
-  const [state, setState] = useState<"idle" | "copied">("idle");
-
-  async function handleClick() {
-    try {
-      await navigator.clipboard.writeText(getText());
-      setState("copied");
-      setTimeout(() => setState("idle"), 1600);
-    } catch { /* ignore */ }
-  }
-
-  return (
-    <button
-      onClick={handleClick}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs
-        border border-[#2c2c2c] bg-transparent text-[#666]
-        hover:border-[#3a3a3a] hover:text-[#999] transition-colors"
-    >
-      {state === "copied" ? (
-        <>
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Copied
-        </>
-      ) : (
-        <>
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-            <rect x="4" y="1" width="7" height="8" rx="1" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M1 4v7h7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-          </svg>
-          Copy
-        </>
-      )}
-    </button>
-  );
-}
-
-function WordBadge({ count, target }: { count: number; target: string }) {
-  return (
-    <span className="text-[11px] text-[#444] tabular-nums">
-      {count.toLocaleString()}w
-      <span className="text-[#333] ml-1">/ {target}</span>
-    </span>
-  );
-}
-
-function Chevron({ open }: { open: boolean }) {
-  return (
-    <svg
-      width="13" height="13" viewBox="0 0 12 12" fill="none"
-      className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`}
-    >
-      <path d="M2.5 4.5L6 8l3.5-3.5" stroke="#555" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// SECTION ROW
-// ─────────────────────────────────────────────────────────────
-
-function SectionRow({
-  meta,
-  section,
-  defaultOpen,
+export function ScriptDisplay({
+  data,
+  analysisId,
 }: {
-  meta: SectionMeta;
-  section: { text: string; wordCount: number };
-  defaultOpen: boolean;
+  data: GeneratedScript | null;
+  analysisId: string | null;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  if (!section.text.trim()) return null;
+  const [evaluations, setEvaluations] = useState<
+    Partial<Record<SectionKey, any>>
+  >({});
 
-  return (
-    <div className="border border-[#1c1c1c] rounded-xl overflow-hidden">
-      <button
-        onClick={() => setOpen((p) => !p)}
-        className="w-full flex items-center justify-between px-4 py-3
-          bg-[#0c0c0c] hover:bg-[#0f0f0f] transition-colors text-left"
-      >
-        <span className="text-[#c8c8c8] text-sm font-medium">{meta.label}</span>
-        <div className="flex items-center gap-3">
-          <WordBadge count={section.wordCount} target={meta.targetWords} />
-          <CopyButton getText={() => section.text} />
-          <Chevron open={open} />
-        </div>
-      </button>
+  const [loadingEval, setLoadingEval] = useState<SectionKey | null>(null);
 
-      {open && (
-        <div className="px-4 py-4 border-t border-[#181818] bg-[#080808]">
-          <p className="text-[#aaa] text-sm leading-[1.9] whitespace-pre-wrap font-mono">
-            {section.text}
-          </p>
-        </div>
-      )}
-    </div>
+  const [rewriteOptions, setRewriteOptions] = useState<any[]>([]);
+
+  const [selectedRewrite, setSelectedRewrite] = useState<string | null>(null);
+
+  const [editing, setEditing] = useState<{
+    section: SectionKey;
+    original: string;
+    editMeta?: any;
+  } | null>(null);
+
+  const [editedText, setEditedText] = useState("");
+
+  const [localSections, setLocalSections] = useState<SectionMap>(
+    data?.sections ?? {
+      hook: { text: "", wordCount: 0 },
+      setup: { text: "", wordCount: 0 },
+      contradiction: { text: "", wordCount: 0 },
+      reframe: { text: "", wordCount: 0 },
+      solution: { text: "", wordCount: 0 },
+      close: { text: "", wordCount: 0 },
+    }
   );
-}
 
-// ─────────────────────────────────────────────────────────────
-// MAIN COMPONENT
-// ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (data?.sections) {
+      setLocalSections(data.sections);
+    }
+  }, [data]);
 
-export function ScriptDisplay({ data }: { data: GeneratedScript | null }) {
-  const [fullOpen, setFullOpen] = useState(true);
+  useEffect(() => {
+    if (!analysisId) return;
 
-  const getFullScript = useCallback(() => data?.fullScript ?? "", [data]);
+    async function loadEvaluations() {
+      const { data: row, error } = await supabase
+        .from("analyses")
+        .select("evaluations")
+        .eq("id", analysisId)
+        .single();
+
+      if (error) {
+        console.error("❌ Load evaluations error:", error);
+        return;
+      }
+
+      if (row?.evaluations) {
+        setEvaluations(row.evaluations);
+      }
+    }
+
+    loadEvaluations();
+  }, [analysisId]);
 
   if (!data) return null;
 
-  const { fullScript, sections, status } = data;
+  const { status, context } = data as any;
 
-  const totalWords = SECTIONS.reduce((sum, { key }) => sum + sections[key].wordCount, 0);
+  const sections = localSections;
+
+  async function handleEvaluate(text: string, key: SectionKey) {
+    if (!analysisId) {
+      console.error("❌ Missing analysisId");
+      return;
+    }
+
+    setLoadingEval(key);
+
+    const idx = SECTION_KEYS.indexOf(key);
+
+    const previous = SECTION_KEYS.slice(0, idx)
+      .map((k) => sections[k]?.text || "")
+      .join("\n\n");
+
+    const next = SECTION_KEYS.slice(idx + 1)
+      .map((k) => sections[k]?.text || "")
+      .join("\n\n");
+
+    try {
+      const res = await fetch("/api/evaluate-section", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          section: key,
+          text,
+          previous,
+          next,
+          context,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Evaluate API failed");
+      }
+
+      const json = await res.json();
+
+      const result = json.result;
+
+      const nextEvaluations = {
+        ...(evaluations ?? {}),
+        [key]: result,
+      };
+
+      setEvaluations(nextEvaluations);
+
+      const { error } = await supabase
+        .from("analyses")
+        .update({
+          evaluations: nextEvaluations,
+        })
+        .eq("id", analysisId);
+
+      if (error) {
+        console.error("❌ Save evaluation error:", error);
+      }
+    } catch (e) {
+      console.error("❌ Evaluate error:", e);
+    }
+
+    setLoadingEval(null);
+  }
+
+  async function handleRewrite(editMeta: EvaluationEdit) {
+    if (!editing) return;
+
+    const sectionText = localSections[editing.section]?.text;
+
+    if (!sectionText) return;
+
+    const res = await fetch("/api/rewrite-fragment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fullSection: sectionText,
+        targetQuote: editMeta.quote,
+        issue: editMeta.issue,
+        impactLevel: editMeta.impactLevel,
+        suggestion: editMeta.suggestion,
+        rewriteHint: editMeta.rewriteHint,
+        context,
+      }),
+    });
+
+    const json = await res.json();
+
+    setRewriteOptions(json.versions ?? []);
+    setSelectedRewrite(null);
+  }
+
+  async function applyRewrite() {
+    if (!editing || !selectedRewrite) return;
+
+    const section = editing.section;
+
+    const updatedText = localSections[section].text.replace(
+      editing.original,
+      selectedRewrite
+    );
+
+    const newSections = {
+      ...localSections,
+      [section]: {
+        ...localSections[section],
+        text: updatedText,
+      },
+    };
+
+    setLocalSections(newSections);
+
+    const newEval = { ...evaluations };
+
+    delete newEval[section];
+
+    setEvaluations(newEval);
+
+    await supabase
+      .from("analyses")
+      .update({
+        evaluations: newEval,
+      })
+      .eq("id", analysisId);
+
+    setEditing(null);
+    setRewriteOptions([]);
+    setSelectedRewrite(null);
+    setEditedText("");
+  }
+
+  const CopyButton = ({ text, id }: any) => {
+    const isCopied = copiedKey === id;
+
+    return (
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(text);
+          setCopiedKey(id);
+
+          setTimeout(() => {
+            setCopiedKey(null);
+          }, 1500);
+        }}
+        className={`px-3 py-1.5 rounded-lg text-xs border transition-all
+        ${
+          isCopied
+            ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+            : "bg-[#111] text-[#666] border-[#222] hover:text-white hover:border-[#444]"
+        }`}
+      >
+        {isCopied ? "Copied ✓" : "Copy"}
+      </button>
+    );
+  };
+
+  const EvalButton = ({ text, id }: any) => {
+    const loading = loadingEval === id;
+
+    return (
+      <button
+        onClick={() => handleEvaluate(text, id)}
+        disabled={loading}
+        className="px-3 py-1.5 rounded-lg text-xs border bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20 transition-all disabled:opacity-50"
+      >
+        {loading ? "Analyzing..." : "✨ Analyze"}
+      </button>
+    );
+  };
+
+  function HighlightText({ text, evalData, section }: any) {
+    if (!evalData?.edits) {
+      return <>{text}</>;
+    }
+
+    let processed = text;
+
+    evalData.edits.forEach((e: any, idx: number) => {
+      if (!e.quote) return;
+
+      processed = processed.replace(e.quote, `[[${idx}::${e.quote}]]`);
+    });
+
+    return (
+      <>
+        {processed.split(/\[\[(.*?)\]\]/g).map((chunk: any, i: number) => {
+          if (i % 2 === 1) {
+            const [idx, content] = chunk.split("::");
+
+            const meta = evalData.edits[Number(idx)];
+
+            return (
+              <span
+                key={i}
+                onClick={() => {
+                  setEditing({
+                    section,
+                    original: content,
+                    editMeta: meta,
+                  });
+
+                  setEditedText(content);
+                }}
+                className="bg-yellow-500/10 underline decoration-yellow-500/60 cursor-pointer hover:bg-yellow-500/20 transition"
+              >
+                {content}
+              </span>
+            );
+          }
+
+          return <span key={i}>{chunk}</span>;
+        })}
+      </>
+    );
+  }
+
+  const renderSection = (key: SectionKey) => {
+    const content = sections[key];
+
+    if (!content?.text) return null;
+
+    return (
+      <div className="rounded-xl border border-[#1a1a1a] bg-[#0d0d0d] p-4">
+        <div className="flex justify-between mb-2">
+          <h3 className="text-white text-sm">{key}</h3>
+
+          <div className="flex gap-2">
+            <CopyButton text={content.text} id={key} />
+            <EvalButton text={content.text} id={key} />
+          </div>
+        </div>
+
+        <p className="text-[#ccc] text-sm whitespace-pre-line">
+          <HighlightText
+            text={content.text}
+            evalData={evaluations[key]}
+            section={key}
+          />
+        </p>
+      </div>
+    );
+  };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-6 mt-6">
+      <div className="flex justify-between">
+        <h2 className="text-white text-xl">Generated Script</h2>
 
-      {/* ── HEADER BAR ── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          <span className="text-[#555] text-xs uppercase tracking-widest">{status}</span>
-          <span className="text-[#333] text-xs">·</span>
-          <span className="text-[#444] text-xs">{totalWords.toLocaleString()} words total</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <CopyButton getText={getFullScript} />
-          <button
-            onClick={() => downloadText(buildDownloadContent(data), `script-${Date.now()}.txt`)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs
-              border border-[#2c2c2c] bg-transparent text-[#666]
-              hover:border-[#3a3a3a] hover:text-[#999] transition-colors"
-          >
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-              <path d="M6 1v7M3 6l3 3 3-3M1 10h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Download
-          </button>
-        </div>
+        <span className="text-xs text-[#555]">{status}</span>
       </div>
 
-      {/* ── FULL SCRIPT ── */}
-      <div className="border border-[#1c1c1c] rounded-xl overflow-hidden">
-        <button
-          onClick={() => setFullOpen((p) => !p)}
-          className="w-full flex items-center justify-between px-4 py-3
-            bg-[#0c0c0c] hover:bg-[#0f0f0f] transition-colors text-left"
-        >
-          <span className="text-[#c8c8c8] text-sm font-medium">Full script</span>
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] text-[#444]">{totalWords.toLocaleString()}w</span>
-            <Chevron open={fullOpen} />
-          </div>
-        </button>
+      {editing && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-[#111] p-4 rounded-lg w-[600px] max-h-[85vh] overflow-y-auto space-y-4">
+            <h3 className="text-white text-sm">Edit Fragment</h3>
 
-        {fullOpen && (
-          <div className="border-t border-[#181818] bg-[#080808]">
-            <div className="max-h-[560px] overflow-y-auto px-4 py-4">
-              <p className="text-[#bbb] text-sm leading-[1.9] whitespace-pre-wrap font-mono">
-                {fullScript}
+            <div className="text-xs text-[#888]">
+              <p className="text-[#aaa] mb-1">Original</p>
+
+              <p className="bg-black p-2 rounded text-[#ccc]">
+                {editing.original}
               </p>
             </div>
+
+            {editing.editMeta && (
+              <div className="text-xs space-y-2 border border-[#222] rounded p-3 bg-[#0a0a0a]">
+                <div>
+                  <span className="text-red-400">Issue:</span>
+
+                  <p className="text-[#ccc]">
+                    {editing.editMeta.issue}
+                  </p>
+                </div>
+
+                <div>
+                  <span className="text-yellow-400">Impact:</span>
+
+                  <p className="text-[#ccc] capitalize">
+                    {editing.editMeta.impactLevel}
+                  </p>
+                </div>
+
+                <div>
+                  <span className="text-blue-400">Suggestion:</span>
+
+                  <p className="text-[#ccc]">
+                    {editing.editMeta.suggestion}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <textarea
+              value={editedText}
+              onChange={(e) => setEditedText(e.target.value)}
+              className="w-full h-32 bg-black text-white p-2 text-sm"
+            />
+
+            {rewriteOptions.length > 0 && (
+              <div className="space-y-2 border-t border-[#222] pt-3">
+                <p className="text-purple-400 text-xs">
+                  Choose version
+                </p>
+
+                {rewriteOptions.map((v: any) => (
+                  <div
+                    key={v.id}
+                    onClick={() => setSelectedRewrite(v.text)}
+                    className={`p-2 rounded cursor-pointer border text-xs
+                    ${
+                      selectedRewrite === v.text
+                        ? "border-blue-500 bg-blue-500/10"
+                        : "border-[#222]"
+                    }`}
+                  >
+                    <p className="text-[#ccc]">{v.text}</p>
+
+                    <p className="text-[#666] mt-1">
+                      score: {v.score} — {v.reason}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setEditing(null);
+                  setEditedText("");
+                  setRewriteOptions([]);
+                  setSelectedRewrite(null);
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => handleRewrite(editing?.editMeta)}
+                className="text-blue-400"
+              >
+                Rewrite with AI
+              </button>
+
+              <button
+                disabled={!selectedRewrite}
+                onClick={applyRewrite}
+                className="text-green-400"
+              >
+                Apply Selected
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+      )}
+
+      <div className="grid gap-4">
+        {SECTION_KEYS.map(renderSection)}
       </div>
-
-      {/* ── SECTION DIVIDER ── */}
-      <p className="text-[#333] text-[11px] uppercase tracking-widest pt-1 px-0.5">
-        Sections
-      </p>
-
-      {/* ── RAW SECTIONS ── */}
-      <div className="space-y-2">
-        {SECTIONS.map((meta, i) => (
-          <SectionRow
-            key={meta.key}
-            meta={meta}
-            section={sections[meta.key]}
-            defaultOpen={i === 0}
-          />
-        ))}
-      </div>
-
     </div>
   );
 }

@@ -263,7 +263,8 @@ export function AnalysisDisplay({ data }: Props) {
 
       {/* Message */}
       {tab === "message" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
+        <div className="columns-1 lg:columns-2 gap-3 md:gap-4">
+          <div className="break-inside-avoid mb-3">
           <Card
             title="🎣 Hook"
             note="Cách kéo viewer ngay từ giây đầu"
@@ -275,7 +276,8 @@ export function AnalysisDisplay({ data }: Props) {
             <FieldRow label="Mechanism" value={d.hook.mechanism} />
             <FieldRow label="Confidence" value={d.hook.confidence} />
           </Card>
-
+          </div>
+          <div className="break-inside-avoid mb-3">
           <Card
             title="🎯 Angle"
             note="Luận điểm chính của video"
@@ -289,7 +291,8 @@ export function AnalysisDisplay({ data }: Props) {
             />
             <FieldRow label="Confidence" value={d.angle.confidence} />
           </Card>
-
+            </div>
+          <div className="break-inside-avoid mb-3">
           <Card
             title="💎 Core Truth"
             note="Lý do thực sự video hoạt động"
@@ -300,6 +303,8 @@ export function AnalysisDisplay({ data }: Props) {
             <FieldRow label="Trigger Moment" value={d.coreTruth.triggerMoment} />
             <FieldRow label="Confidence" value={d.coreTruth.confidence} />
           </Card>
+            </div>
+
         </div>
       )}
 

@@ -1,9 +1,5 @@
 /**
  * Chuẩn hóa data AI trả về → đúng kiểu TypeScript
- * Mỗi API route import từ đây → không trùng lặp code
- * - normalizeExtraction: Bước 1 (phân tích video)
- * - normalizeResearch: Bước 2 (hướng dẫn nghiên cứu Reddit)
- * - normalizeSynthesis: Bước 3 (tổng hợp chiến lược)
  */
 
 import type {
@@ -16,41 +12,54 @@ import type {
 import {
   asRecord,
   asString,
-  asStringArray,
   asConfidence,
   type JsonRecord,
 } from "./openai";
 
-import { SECTION_ORDER } from "./prompts/scriptGenerator";
+// ─────────────────────────────────────────────
+// SAFE UNWRAP ROOT (FIX RỖNG DATA)
+// ─────────────────────────────────────────────
+
+function unwrap(raw: JsonRecord) {
+  const r = asRecord(raw);
+
+  return asRecord(
+    r.result ??
+    r.data ??
+    r.output ??
+    r.analysis ??
+    raw
+  );
+}
 
 const INSUFFICIENT = "Insufficient data — need more comments";
 
-// ── Step 1: Extraction ──────────────────────────────────────
+// ─────────────────────────────────────────────
+// STEP 1: EXTRACT
+// ─────────────────────────────────────────────
 
 export function normalizeExtraction(
   raw: JsonRecord,
   comments: string[]
 ): AnalysisResult {
-  const hook = asRecord(raw.hook);
-  const angle = asRecord(raw.angle);
-  const ct = asRecord(raw.coreTruth);
-  const att = asRecord(raw.attention);
-  const rd = asRecord(att.retentionDriver);
-  const aud = asRecord(raw.audience);
-  const ci = asRecord(aud.commentInsight);
-  const pri = asRecord(raw.priority);
-  const vp = asRecord(raw.viewerProfile);
+  const source = unwrap(raw);
 
-  const tooFew = comments.length < 5;
+  const hook = asRecord(source.hook);
+  const angle = asRecord(source.angle);
+  const ct = asRecord(source.coreTruth);
+  const att = asRecord(source.attention);
+  const rd = asRecord(att.retentionDriver);
+  const aud = asRecord(source.audience);
+  const ci = asRecord(aud.commentInsight);
+  const pri = asRecord(source.priority);
+  const vp = asRecord(source.viewerProfile);
+
+  const tooFew = (comments?.length || 0) < 5;
 
   return {
     hook: {
       raw: asString(hook.raw),
-      type: asString(hook.type) as
-        | "Curiosity"
-        | "Pain"
-        | "Question"
-        | "Story",
+      type: asString(hook.type) as any,
       mechanism: asString(hook.mechanism),
       confidence: asConfidence(hook.confidence),
     },
@@ -77,27 +86,20 @@ export function normalizeExtraction(
     audience: {
       profile: asString(aud.profile),
 
-      painMap: (Array.isArray(aud.painMap) ? aud.painMap : []).map((item) => {
-        const p = asRecord(item);
-
-        return {
-          pain: asString(p.pain),
-          realScenario: asString(p.realScenario),
-        };
-      }),
+      painMap: Array.isArray(aud.painMap)
+        ? aud.painMap.map((i) => {
+            const p = asRecord(i);
+            return {
+              pain: asString(p.pain),
+              realScenario: asString(p.realScenario),
+            };
+          })
+        : [],
 
       commentInsight: {
-        repeatedPain: tooFew
-          ? INSUFFICIENT
-          : asString(ci.repeatedPain),
-
-        emotionalExample: tooFew
-          ? INSUFFICIENT
-          : asString(ci.emotionalExample),
-
-        unspokenNeed: tooFew
-          ? INSUFFICIENT
-          : asString(ci.unspokenNeed),
+        repeatedPain: tooFew ? INSUFFICIENT : asString(ci.repeatedPain),
+        emotionalExample: tooFew ? INSUFFICIENT : asString(ci.emotionalExample),
+        unspokenNeed: tooFew ? INSUFFICIENT : asString(ci.unspokenNeed),
       },
     },
 
@@ -113,63 +115,57 @@ export function normalizeExtraction(
       recentPainTrigger: asString(vp.recentPainTrigger),
     },
 
-    inputComments: comments,
+    inputComments: comments || [],
   };
 }
 
-// ── Step 2: Research Directive ──────────────────────────────
+// ─────────────────────────────────────────────
+// STEP 2: RESEARCH
+// ─────────────────────────────────────────────
 
 export function normalizeResearch(raw: any): ResearchDirective {
   const pc = raw?.primaryContradiction ?? {};
 
   return {
     primaryContradiction: {
-      type: pc.type,
-      description: pc.description,
-      searchInstinct: pc.searchInstinct,
-      whyItMatters: pc.whyItMatters ?? "",
+      type: pc.type || "",
+      description: pc.description || "",
+      searchInstinct: pc.searchInstinct || "",
+      whyItMatters: pc.whyItMatters || "",
     },
 
-    searchInstincts: Array.isArray(raw?.searchInstincts)
-      ? raw.searchInstincts
-      : [],
+    searchInstincts: raw?.searchInstincts || [],
+    painSignals: raw?.painSignals || [],
 
-    painSignals: Array.isArray(raw?.painSignals)
-      ? raw.painSignals
-      : [],
-
-    ranking: raw?.ranking ?? {
+    ranking: raw?.ranking || {
       top1: "",
       top2: "",
       top3: "",
       reason: "",
     },
 
-    confidence: raw?.confidence ?? "low",
+    confidence: raw?.confidence || "low",
   };
 }
 
-// ── Step 3: Strategic Synthesis ─────────────────────────────
+// ─────────────────────────────────────────────
+// STEP 3: SYNTHESIS
+// ─────────────────────────────────────────────
 
-export function normalizeSynthesis(
-  raw: JsonRecord
-): StrategicSynthesis {
-  const fp = asRecord(raw.focusPriority);
-  const ce = asRecord(raw.coreEngine);
-  const pain = asRecord(raw.pain);
-  const bs = asRecord(raw.beliefShift);
-  const exec = asRecord(raw.execution);
-  const ac = asRecord(raw.authorControl);
-  const rk = asRecord(raw.ranking);
+export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
+  const r = asRecord(raw);
+
+  const fp = asRecord(r.focusPriority);
+  const ce = asRecord(r.coreEngine);
+  const pain = asRecord(r.pain);
+  const bs = asRecord(r.beliefShift);
+  const exec = asRecord(r.execution);
+  const ac = asRecord(r.authorControl);
+  const rk = asRecord(r.ranking);
 
   return {
     focusPriority: {
-      primary: asString(fp.primary) as
-        | "contradiction"
-        | "behavior"
-        | "identity"
-        | "no_win",
-
+      primary: asString(fp.primary) as any,
       reason: asString(fp.reason),
     },
 
@@ -192,28 +188,16 @@ export function normalizeSynthesis(
       to: asString(bs.to),
     },
 
-    anchors: (
-      Array.isArray(raw.anchors)
-        ? raw.anchors
-        : []
-    ).map((item) => {
-      const a = asRecord(item);
-
-      return {
-        scenario: asString(a.scenario),
-
-        emotion: asString(a.emotion) as
-          | "fear"
-          | "shame"
-          | "ego"
-          | "relief",
-
-        use: asString(a.use) as
-          | "hook"
-          | "mid"
-          | "proof",
-      };
-    }),
+    anchors: Array.isArray(r.anchors)
+      ? r.anchors.map((a) => {
+          const x = asRecord(a);
+          return {
+            scenario: asString(x.scenario),
+            emotion: asString(x.emotion) as any,
+            use: asString(x.use) as any,
+          };
+        })
+      : [],
 
     execution: {
       hook: asString(exec.hook),
@@ -223,11 +207,7 @@ export function normalizeSynthesis(
     },
 
     authorControl: {
-      mode: asString(ac.mode) as
-        | "augment"
-        | "replace"
-        | "none",
-
+      mode: asString(ac.mode) as any,
       overridePoint: asString(ac.overridePoint),
     },
 
@@ -238,47 +218,42 @@ export function normalizeSynthesis(
       reason: asString(rk.reason),
     },
 
-    // ✅ FIX: thêm field bị thiếu
-    physicalDetail: Array.isArray(raw.physicalDetail)
-      ? raw.physicalDetail.map((item) => asString(item))
+    physicalDetail: Array.isArray(r.physicalDetail)
+      ? r.physicalDetail.map((i: any) => asString(i))
       : [],
 
-    confidenceNotes: asString(raw.confidenceNotes),
+    confidenceNotes: asString(r.confidenceNotes),
   };
 }
 
-// ── Step 4: Script Generation ──────────────────────────────
+// ─────────────────────────────────────────────
+// STEP 4: SCRIPT
+// ─────────────────────────────────────────────
 
-export function normalizeScript(
-  raw: JsonRecord
-): GeneratedScript {
-  const sections = (raw.sections ?? {}) as Record<string, any>;
+export function normalizeScript(raw: JsonRecord): GeneratedScript {
+  const r = asRecord(raw);
+  const sections = asRecord(r.sections);
 
-  function normalizeSection(key: string) {
-    const s = sections[key] ?? {};
-
+  const get = (k: string) => {
+    const s = asRecord(sections[k]);
     return {
       text: asString(s.text),
       wordCount: Number(s.wordCount) || 0,
     };
-  }
+  };
 
   return {
-    id: asString(raw.id),
-    status:
-      raw.status === "FINAL"
-        ? "FINAL"
-        : "DRAFT",
-
-    fullScript: asString(raw.fullScript),
+    id: asString(r.id),
+    status: r.status === "FINAL" ? "FINAL" : "DRAFT",
+    fullScript: asString(r.fullScript),
 
     sections: {
-      hook: normalizeSection("hook"),
-      setup: normalizeSection("setup"),
-      contradiction: normalizeSection("contradiction"),
-      reframe: normalizeSection("reframe"),
-      solution: normalizeSection("solution"),
-      close: normalizeSection("close"),
+      hook: get("hook"),
+      setup: get("setup"),
+      contradiction: get("contradiction"),
+      reframe: get("reframe"),
+      solution: get("solution"),
+      close: get("close"),
     },
   };
 }

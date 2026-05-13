@@ -49,9 +49,8 @@ export default function Home() {
   const [commentMode, setCommentMode] = useState<"individual" | "bulk">("individual");
   const [bulkComments, setBulkComments] = useState("");
 
-  const { history, loading: historyLoading, saveAnalysis, updateAnalysis, deleteAnalysis, fetchHistory } =
+  const { history, loading: historyLoading, saveAnalysis, deleteAnalysis, fetchHistory } =
     useHistory();
-
   // ── Restore session from localStorage on mount ──
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
@@ -201,9 +200,6 @@ async function handleAnalyze() {
     await deleteAnalysis(id);
     if (activeId === id) handleNew();
   }
-  console.log("research", research)
-  console.log("synthesis", synthesis)
-  
   async function handleStep2() {
     if (!result) return;
     setStepLoading(true); setError(null);

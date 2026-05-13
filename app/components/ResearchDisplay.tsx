@@ -76,7 +76,6 @@ function SearchGuide() {
 }
 
 export function ResearchDisplay({ data }: Props) {
-  console.log("data", data)
   const searchInstincts = Array.isArray(data?.searchInstincts) ? data.searchInstincts : [];
   const painSignals = Array.isArray(data?.painSignals) ? data.painSignals : [];
 

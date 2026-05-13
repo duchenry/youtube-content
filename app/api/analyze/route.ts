@@ -18,6 +18,25 @@ type Body = {
   contentType?: string;
 };
 
+function safeParseJSON(raw: any) {
+  if (!raw) return {};
+
+  if (typeof raw !== "string") return raw;
+
+  try {
+    // remove ```json wrapper if exists
+    const cleaned = raw
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    return JSON.parse(cleaned);
+  } catch (e) {
+    console.error("[safeParseJSON] failed:", raw);
+    return {};
+  }
+}
+
 const DEFAULT_PLATFORM = "YouTube Long-Form Video (8–25 min)";
 const DEFAULT_NICHE = "Personal Finance";
 const DEFAULT_TARGET_VIEWER = "Not specified";
@@ -43,6 +62,7 @@ export async function POST(req: NextRequest) {
     // ─────────────────────────────
     // STEP 1: EXTRACTION
     // ─────────────────────────────
+
     const extractionPrompt = EXTRACTION_PROMPT
       .replace("{{INPUT.platform}}", body.platform ?? DEFAULT_PLATFORM)
       .replace("{{INPUT.niche}}", body.niche ?? DEFAULT_NICHE)
@@ -57,14 +77,18 @@ export async function POST(req: NextRequest) {
       6500
     );
 
+    // 🔥 FIX: ALWAYS SAFE PARSE FIRST
+    const extractionObject = safeParseJSON(extractionRaw);
+
     const extractionNormalized: AnalysisResult = normalizeExtraction(
-      extractionRaw,
+      extractionObject,
       topComments
     );
 
     // ─────────────────────────────
     // STEP 2: INTERPRETATION
     // ─────────────────────────────
+
     let interpretation = null;
 
     try {
@@ -79,23 +103,23 @@ export async function POST(req: NextRequest) {
         2000
       );
 
-      interpretation =
-        typeof raw === "string" ? JSON.parse(raw) : raw;
-    } catch {
+      interpretation = safeParseJSON(raw);
+    } catch (e) {
+      console.error("[interpretation error]", e);
       interpretation = null;
     }
 
     // ─────────────────────────────
-    // FINAL RESPONSE (FIXED SHAPE)
+    // FINAL RESPONSE
     // ─────────────────────────────
+
     return NextResponse.json({
-      result: {
-        ...extractionNormalized,
-        inputComments: topComments,
-      },
+      result: extractionNormalized,
       interpretation,
     });
   } catch (err) {
+    console.error("[POST ERROR]", err);
+
     return NextResponse.json(
       {
         error: err instanceof Error ? err.message : "Unexpected server error",

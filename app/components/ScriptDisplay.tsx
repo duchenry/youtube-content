@@ -250,15 +250,12 @@ async function applyRewrite() {
 
   const section = editing.section;
 
-  const finalRewrite = editedText.trim();
-
-  // vẫn giữ rule: rewrite không cho rỗng
-  if (!finalRewrite) return;
+  const finalRewrite = editedText; // KHÔNG trim
 
   const originalText = localSections[section].text;
 
   // replace an toàn hơn (chỉ replace 1 lần, tránh mutate string nhiều match)
-  const updatedText = originalText.replace(
+  const updatedText = originalText.replaceAll(
     editing.original,
     finalRewrite
   );
@@ -537,7 +534,7 @@ async function applyRewrite() {
                   >
                     <div className="flex justify-between">
                       <span className="text-[#ccc]">
-                        "{m.motif}"
+                        &ldquo;{m.motif}&rdquo;
                       </span>
 
                       <span
@@ -554,7 +551,7 @@ async function applyRewrite() {
                     <div className="mt-2 space-y-1">
                       {m.appearances.map((a, idx) => (
                         <div key={idx} className="text-[#666]">
-                          {a.section} → "{a.quote}"
+                          {a.section} → &quot;{a.quote}&quot;
                         </div>
                       ))}
                     </div>
@@ -581,9 +578,7 @@ async function applyRewrite() {
                         {t.section}
                       </span>
 
-                      <span className="text-[#666] ml-2">
-                        {t.issue}
-                      </span>
+                      &ldquo;{t.issue}&rdquo;
                     </div>
                   ))}
               </div>
@@ -640,11 +635,11 @@ async function applyRewrite() {
                     </div>
 
                     <div className="text-[#ccc] mt-1">
-                      "{c.quote}"
+                      &ldquo;{c.quote}&rdquo;
                     </div>
 
                     <div className="text-[#666] mt-2">
-                      {c.issue}
+                      &ldquo;{c.issue}&rdquo;
                     </div>
                   </div>
                 ))}

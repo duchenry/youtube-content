@@ -109,7 +109,9 @@ OUTPUT SCHEMA
     "ageRange": "Estimated age range",
     "incomeOrSituation": "Financial/life situation",
     "coreBelief": "Belief being challenged",
-    "recentPainTrigger": "Concrete recent situation"
+    "recentPainTrigger": "Concrete recent situation",
+    "whatTheyAlreadyTried": "Specific action they took — and why it failed. Not effort in general. One attempt, one outcome.",
+    "aspirationalAnchor": "One specific moment from transcript or comments — timestamp, quote, or named situation — where the constraint visibly lifts. If none found: INSUFFICIENT_DATA"
   }
 }
 
@@ -123,6 +125,8 @@ Before finalizing output, ensure:
 - belief is tied to a real quote or scenario
 - scenario is physical and specific
 - retention is driven by unresolved tension
+- whatTheyAlreadyTried contains one real action + one real failure — not a summary of effort
+- aspirationalAnchor is a moment from the source material, not an inference about hope. If no moment exists: INSUFFICIENT_DATA
 
 If output feels generic → make it more specific.
-`
+`;

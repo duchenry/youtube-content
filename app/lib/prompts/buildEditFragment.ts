@@ -186,29 +186,11 @@ OUTPUT FORMAT
 VERSION 1:
 [text]
 
-META:
-- restraint: low | medium | high
-- realism: low | medium | high
-- readability: low | medium | high
-- risk: short description
-
 VERSION 2:
 [text]
 
-META:
-- restraint: low | medium | high
-- realism: low | medium | high
-- readability: low | medium | high
-- risk: short description
-
 VERSION 3:
 [text]
-
-META:
-- restraint: low | medium | high
-- realism: low | medium | high
-- readability: low | medium | high
-- risk: short description
 
 ━━━━━━━━━━━━━━━━━━━
 CRITICAL OUTPUT RULES

@@ -209,6 +209,14 @@ export type RewriteHint = {
   rhythm: "short" | "broken" | "trailing" | "heavy";
   action: string;
   omission: string;
+  anchor: string;
+};
+
+export type RewriteOption = {
+  type: string;
+  text: string;
+  score: number;
+  reason: string;
 };
 
 export type EvaluationEdit = {
@@ -218,6 +226,7 @@ export type EvaluationEdit = {
   suggestion: string;
 
   rewriteHint: RewriteHint;
+  rewriteOptions?: RewriteOption[];
 };
 
 /**
@@ -309,3 +318,49 @@ export type AnalysisDBRow = {
 
   created_at: string;
 };
+
+// lib/types/scriptEvaluation.ts
+
+export interface ScriptEvaluateResult {
+  motifFlags: MotifFlag[];
+  tensionCurve: TensionCurveFlag[];
+  anchorOveruse: AnchorFlag[];
+  conclusiveEndings: ConclusiveEndingFlag[];
+  summary: {
+    passCount: number;
+    flagCount: number;
+    critical: boolean;
+  };
+}
+
+export interface MotifFlag {
+  motif: string;
+  count: number;
+  appearances: {
+    section: string;
+    quote: string;
+  }[];
+  verdict: "ok" | "overused";
+  advice?: string;
+}
+
+export interface TensionCurveFlag {
+  section: string;
+  expectedLevel: number;
+  issue: string | null;
+  advice?: string;
+}
+
+export interface AnchorFlag {
+  detail: string;
+  sections: string[];
+  verdict: "ok" | "overused";
+  advice?: string;
+}
+
+export interface ConclusiveEndingFlag {
+  advice?: string;
+  section: string;
+  quote: string;
+  issue: string;
+}

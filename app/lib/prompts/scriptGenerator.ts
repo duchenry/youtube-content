@@ -285,6 +285,7 @@ ${GLOBAL_SCRIPT_RULES}
 Pain: {{rawPain}}
 Contradiction: {{contradiction}}
 False belief: {{falseBelief}}
+Open question: {{openQuestion}}
 
 Physical anchor: {{physicalDetail}}
 
@@ -294,6 +295,9 @@ The first sentence should name a specific action or object — not a feeling.
 Weave Pain, Contradiction, and False belief into the scene — do not list them.
 Insert 1 interruption using the physical anchor.
 Imply something is wrong through behavior and detail. Never state it.
+
+Plant the open question — do not answer it. It should feel like something
+the character almost notices, then moves past. The viewer carries it forward.
 
 RHYTHM:
 Short sentences dominate.
@@ -438,6 +442,7 @@ Continue from (last 3–5 sentences only): "{{lastLines}}"
 Belief: {{falseBelief}}
 Crack: {{crackMoment}}
 Truth: {{hiddenTruth}}
+Glimpse: {{aspirationalGlimpse}}
 
 Physical anchor: {{physicalDetail}}
 
@@ -455,7 +460,10 @@ STRUCTURE:
    The character does not choose between them.
 5. The hidden truth {{hiddenTruth}} is present — but only partially visible.
    A fragment. Not a conclusion.
-6. End on something smaller than what came before.
+6. The glimpse {{aspirationalGlimpse}} surfaces briefly — one specific action
+   or decision that became possible for someone else. Not motivational.
+   Just visible. Then gone.
+7. End on something smaller than what came before.
    Not a quiet insight. Just a smaller, flatter observation.
 
 CRACK EXAMPLE (rhythm reference only — do not copy):
@@ -494,6 +502,7 @@ Continue from (last 3–5 sentences only): "{{lastLines}}"
 
 Need: {{unspokenNeed}}
 Loop: {{behaviorLoop}}
+Glimpse: {{aspirationalGlimpse}}
 
 Physical anchor: {{physicalDetail}}
 
@@ -513,6 +522,10 @@ OPTION PRESENTATION EXAMPLE:
 "There's a sub I check sometimes. Someone always says move somewhere cheaper.
 I've thought about it. The way you think about faking your death.
 Technically possible. Requires abandoning everything."
+
+The glimpse {{aspirationalGlimpse}} must appear once — briefly, flat,
+as something the character heard about someone else. Not as inspiration.
+Just as information that didn't land.
 
 The unspoken need {{unspokenNeed}} must be visible through
 what the character gravitates toward — not through what he says he needs.
@@ -629,19 +642,11 @@ export function renderScriptPrompt(
 ): string {
   let output = template;
 
-  // ───────────────────────────────────────────────────────────
-  // Normalize values
-  // ───────────────────────────────────────────────────────────
-
   const normalized: Record<string, string> = {};
 
   for (const key in values) {
     normalized[key] = safe(values[key]);
   }
-
-  // ───────────────────────────────────────────────────────────
-  // Inject known values
-  // ───────────────────────────────────────────────────────────
 
   for (const key in normalized) {
     output = output.replaceAll(
@@ -649,10 +654,6 @@ export function renderScriptPrompt(
       normalized[key]
     );
   }
-
-  // ───────────────────────────────────────────────────────────
-  // Auto-fill unresolved vars
-  // ───────────────────────────────────────────────────────────
 
   output = output.replace(
     /\{\{([^}]+)\}\}/g,
@@ -663,7 +664,6 @@ export function renderScriptPrompt(
         `[renderScriptPrompt] Auto-filled unresolved variable: {{${key}}}`
       );
 
-      // continuity-safe fallbacks
       const fallbackMap: Record<string, string> = {
         voice:
           `
@@ -702,15 +702,17 @@ Nothing resolves cleanly.
 
         coreBelief:
           "Hard work is supposed to lead somewhere.",
+
+        openQuestion:
+          "Something about this doesn't add up but the character can't name it yet.",
+
+        aspirationalGlimpse:
+          "Someone nearby made a decision that didn't require a spreadsheet.",
       };
 
       return fallbackMap[key] || "";
     }
   );
-
-  // ───────────────────────────────────────────────────────────
-  // Final unresolved check
-  // ───────────────────────────────────────────────────────────
 
   const remaining = output.match(/\{\{[^}]+\}\}/g);
 

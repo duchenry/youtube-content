@@ -4,7 +4,7 @@ import {
   buildVoice,
 } from "./scriptGenerator";
 
-const VOICE_PRESET: Record<
+export const VOICE_PRESET: Record<
   string,
   "resigned" | "building" | "raw"
 > = {
@@ -16,7 +16,16 @@ const VOICE_PRESET: Record<
   close: "resigned",
 };
 
-export function mapToScriptInputs(data: any) {
+export const ENERGY_MAP: Record<string, string> = {
+  hook: "ambient — not crisis, discomfort is background noise",
+  setup: "tightening — pressure building, not arrived yet",
+  contradiction: "peak — both exits closed, do not flatten anything",
+  reframe: "deflating — quieter than contradiction, something shifted sideways",
+  solution: "low — running out of things to say, options considered with no conviction",
+  close: "dissipating — flat, no energy for meaning, sentences smallest in script",
+};
+
+export function mapToScriptInputs(data: any, previousOutputs: Record<string, string> = {}) {
   const research = data?.research || {};
   const synthesis = data?.synthesis || {};
   const extraction = data?.extraction || {};
@@ -45,81 +54,86 @@ export function mapToScriptInputs(data: any) {
     synthesis?.coreEngine?.contradiction ||
     "Working more doesn't seem to change anything.";
 
+  const primaryOpenQuestion =
+    synthesis?.forwardTension?.openQuestion ||
+    "";
+
+  const primaryAspirationalGlimpse =
+    synthesis?.forwardTension?.aspirationalGlimpse ||
+    extraction?.viewerProfile?.aspirationalAnchor ||
+    "";
+
   // ─────────────────────────────────────────────────────────────
   // CHARACTER PROSE → feeds buildVoice()
   // ─────────────────────────────────────────────────────────────
 
   const characterProse = [
-    extraction?.audience?.profile,
-    primaryPain,
-    primaryLoop,
-    primaryScenario,
-    synthesis?.beliefShift?.breakMoment,
+    extraction?.audience?.profile && `${extraction.audience.profile}.`,
+    primaryScenario && `${primaryScenario}.`,
+    primaryPain && `${primaryPain}.`,
+    primaryLoop && `${primaryLoop}.`,
+    synthesis?.beliefShift?.breakMoment
+      ? `Once: ${synthesis.beliefShift.breakMoment}.`
+      : null,
   ]
     .filter(Boolean)
-    .join(". ");
+    .join(" ");
 
   // ─────────────────────────────────────────────────────────────
   // SYSTEM VARS
   // ─────────────────────────────────────────────────────────────
 
-  const sys = (
-    section: string,
-    prev?: string
-  ) => ({
-    arcContract: buildArcContract(section as any),
+  const sys = (section: string, prev?: string) => {
+    const prevOutput = prev != null ? previousOutputs[prev] : undefined;
 
-    identityLock: buildIdentityLock({
-      age:
-        extraction?.viewerProfile?.ageRange ||
-        "late 20s",
+    return {
+      arcContract: buildArcContract(section as any),
 
-      income:
-        extraction?.viewerProfile?.incomeOrSituation ||
-        "unstable income",
+      identityLock: buildIdentityLock({
+        age:
+          extraction?.viewerProfile?.ageRange ||
+          "late 20s",
 
-      job:
-        extraction?.audience?.profile ||
-        "works online",
+        income:
+          extraction?.viewerProfile?.incomeOrSituation ||
+          "unstable income",
 
-      livingSituation: primaryScenario,
-    }),
+        job:
+          extraction?.audience?.profile ||
+          "works online",
 
-    // NEVER EMPTY
-    voice: buildVoice(
-      characterProse || primaryPain,
-      VOICE_PRESET[section] || "resigned",
-      prev
-        ? VOICE_PRESET[prev]
-        : undefined
-    ),
+        livingSituation: primaryScenario,
+      }),
 
-    // continuity memory
-    lastLines:
-      "Continue naturally from previous emotional beat.",
+      voice: buildVoice(
+        characterProse || primaryPain,
+        VOICE_PRESET[section] || "resigned",
+        prev ? VOICE_PRESET[prev] : undefined
+      ),
 
-    // recurring physical texture
-    physicalDetail:
-      synthesis?.anchors?.[0]?.physicalDetail ||
-      primaryScenario,
+      lastLines: prevOutput
+        ? prevOutput.trim().split("\n").filter(Boolean).slice(-4).join("\n")
+        : "Opening section — no previous lines.",
 
-    // emotional continuity anchor
-    scriptMemory:
-      synthesis?.beliefShift?.breakMoment ||
-      synthesis?.pain?.real ||
-      primaryScenario,
+      physicalDetail:
+        synthesis?.anchors?.[0]?.physicalDetail ||
+        primaryScenario,
 
-    // recurring behavioral loop
-    habitLoop: primaryLoop,
+      scriptMemory:
+        synthesis?.beliefShift?.breakMoment ||
+        synthesis?.pain?.real ||
+        primaryScenario,
 
-    // recurring almost-relief moment
-    almostMoment:
-      synthesis?.anchors?.find(
-        (a: any) => a?.emotion === "relief"
-      )?.scenario ||
-      synthesis?.anchors?.[0]?.scenario ||
-      primaryScenario,
-  });
+      habitLoop: primaryLoop,
+
+      almostMoment:
+        synthesis?.anchors?.find(
+          (a: any) => a?.emotion === "relief"
+        )?.scenario ||
+        synthesis?.anchors?.[0]?.scenario ||
+        primaryScenario,
+    };
+  };
 
   return {
     hook: {
@@ -135,6 +149,8 @@ export function mapToScriptInputs(data: any) {
       falseBelief:
         synthesis?.beliefShift?.from ||
         "If I keep pushing harder it'll eventually work.",
+
+      openQuestion: primaryOpenQuestion,
     },
 
     setup: {
@@ -196,6 +212,8 @@ export function mapToScriptInputs(data: any) {
       hiddenTruth:
         synthesis?.beliefShift?.to ||
         "Maybe the system itself changed.",
+
+      aspirationalGlimpse: primaryAspirationalGlimpse,
     },
 
     solution: {
@@ -206,6 +224,8 @@ export function mapToScriptInputs(data: any) {
         "Needs relief more than motivation.",
 
       behaviorLoop: primaryLoop,
+
+      aspirationalGlimpse: primaryAspirationalGlimpse,
     },
 
     close: {

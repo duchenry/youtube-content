@@ -10,7 +10,6 @@ export async function POST(req: Request) {
     
     const data = body.data ?? body;
     const id = body.id;
-    console.log("data", data)
     
     if (!data) throw new Error("Missing data");
 

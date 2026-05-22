@@ -21,7 +21,7 @@ export function initScriptMemory(data: any): ScriptMemory {
 }
 
 // ─────────────────────────────────────────────────────────────
-// APPLY SECTION
+// APPLY SECTION — updated to new Arc 3 keys
 // ─────────────────────────────────────────────────────────────
 
 export function applySectionToMemory(memory: ScriptMemory, section: string): ScriptMemory {
@@ -29,26 +29,26 @@ export function applySectionToMemory(memory: ScriptMemory, section: string): Scr
 
   switch (section) {
     case "hook":
-      next.emotionalTrace.push("Hook: tension opened");
+      next.emotionalTrace.push("Hook: dissonance opened");
       break;
-    case "setup":
-      next.emotionalTrace.push("Setup: grounded");
+    case "crack":
+      next.emotionalTrace.push("Crack: assumption broken");
       next.anchorsUsed.push("physicalDetail");
       break;
-    case "contradiction":
-      next.emotionalTrace.push("Contradiction: peak tension");
-      next.clipAnchors.push("contradiction");
+    case "expose":
+      next.emotionalTrace.push("Expose: peak tension");
+      next.clipAnchors.push("expose");
       break;
-    case "reframe":
-      next.emotionalTrace.push("Reframe: shift");
-      next.clipAnchors.push("reframe");
+    case "validate":
+      next.emotionalTrace.push("Validate: proof before relief");
+      next.clipAnchors.push("validate");
       break;
-    case "solution":
-      next.emotionalTrace.push("Solution: partial relief");
+    case "framework":
+      next.emotionalTrace.push("Framework: new lens");
       break;
     case "close":
-      next.emotionalTrace.push("Close: fade");
-      next.anchorsUsed.push("almostMoment");
+      next.emotionalTrace.push("Close: debate question");
+      next.anchorsUsed.push("debateQuestion");
       break;
   }
 
@@ -79,11 +79,11 @@ export function buildScriptMemoryString(memory: ScriptMemory, nextSection: strin
   }
 
   if (nextSection === "close") {
-    lines.push(`RULE: no new idea, only echo`);
+    lines.push(`RULE: end on debate question — no summary, no conclusion`);
   }
 
-  // ENERGY CONTROL
-  lines.push(`ENERGY: Hook→Setup→Peak→Shift→Soft→Fade`);
+  // ENERGY CONTROL — Arc 3
+  lines.push(`ENERGY: Hook(8)→Crack(7)→Expose(9)→Validate(7)→Framework(6)→Close(9)`);
 
   return lines.slice(0, 6).join("\n");
 }

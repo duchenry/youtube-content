@@ -1,66 +1,143 @@
-import {
-  buildArcContract,
-  buildIdentityLock,
-  buildVoice,
-} from "./scriptGenerator";
+// ─────────────────────────────────────────────────────────────
+// VOICE PRESET MAP — Arc 3
+// ─────────────────────────────────────────────────────────────
+
+import { buildArcContract, buildIdentityLock, buildVoice } from "./scriptGenerator";
 
 export const VOICE_PRESET: Record<
   string,
-  "resigned" | "building" | "raw"
+  "investigative" | "conspiratorial" | "contrarian"
 > = {
-  hook: "raw",
-  setup: "resigned",
-  contradiction: "building",
-  reframe: "resigned",
-  solution: "resigned",
-  close: "resigned",
+  hook: "conspiratorial",
+  crack: "investigative",
+  expose: "conspiratorial",
+  validate: "investigative",
+  framework: "contrarian",
+  close: "conspiratorial",
 };
+
+// ─────────────────────────────────────────────────────────────
+// ENERGY MAP — Arc 3
+// ─────────────────────────────────────────────────────────────
 
 export const ENERGY_MAP: Record<string, string> = {
-  hook: "ambient — not crisis, discomfort is background noise",
-  setup: "tightening — pressure building, not arrived yet",
-  contradiction: "peak — both exits closed, do not flatten anything",
-  reframe: "deflating — quieter than contradiction, something shifted sideways",
-  solution: "low — running out of things to say, options considered with no conviction",
-  close: "dissipating — flat, no energy for meaning, sentences smallest in script",
+  hook: "8/10 — dissonance. 1 unexplained fact. Let it sit.",
+  crack: "7/10 — assumption breaking. Show the seam. Don't explain the full mechanism.",
+  expose: "9/10 — peak. Name the villain mechanism. Do not soften.",
+  validate: "7/10 — proof before relief. Screenshot-able line required.",
+  framework: "6/10 — new lens. 1 concrete action. End on open edge.",
+  close: "9/10 — divide the room. Debate question. No summary. No conclusion.",
 };
 
-export function mapToScriptInputs(data: any, previousOutputs: Record<string, string> = {}) {
+// ─────────────────────────────────────────────────────────────
+// MAP TO SCRIPT INPUTS — Arc 3 Final
+// ─────────────────────────────────────────────────────────────
+
+export function mapToScriptInputs(
+  data: any,
+  previousOutputs: Record<string, string> = {}
+) {
   const research = data?.research || {};
   const synthesis = data?.synthesis || {};
   const extraction = data?.extraction || {};
 
   // ─────────────────────────────────────────────────────────────
-  // SHARED FALLBACKS
+  // SHARED — all from real pipeline data, no fabrication
   // ─────────────────────────────────────────────────────────────
 
   const primaryScenario =
     synthesis?.pain?.scenario ||
     synthesis?.anchors?.[0]?.scenario ||
     extraction?.audience?.painMap?.[0]?.realScenario ||
-    "Small apartment. Same routine.";
+    "";
 
   const primaryPain =
     synthesis?.pain?.real ||
     extraction?.audience?.painMap?.[0]?.pain ||
-    "Feels stuck financially.";
+    "";
 
   const primaryLoop =
-    synthesis?.coreEngine?.behaviorLoop ||
-    "Checks numbers. Closes app. Repeats later.";
+    synthesis?.coreEngine?.behaviorLoop || "";
 
   const primaryContradiction =
     research?.primaryContradiction?.description ||
     synthesis?.coreEngine?.contradiction ||
-    "Working more doesn't seem to change anything.";
+    "";
 
   const primaryOpenQuestion =
     synthesis?.forwardTension?.openQuestion ||
+    research?.primaryContradiction?.description ||
     "";
 
   const primaryAspirationalGlimpse =
     synthesis?.forwardTension?.aspirationalGlimpse ||
-    extraction?.viewerProfile?.aspirationalAnchor ||
+    synthesis?.beliefShift?.to ||
+    "";
+
+  // ─────────────────────────────────────────────────────────────
+  // VILLAIN — prefer current synthesis schema, keep old fallback
+  // ─────────────────────────────────────────────────────────────
+
+  const villainEntity =
+    synthesis?.coreEngine?.villain?.entity || "";
+
+  const villainMechanism =
+    synthesis?.coreEngine?.villain?.howItOperates ||
+    synthesis?.coreEngine?.noWinLoop ||
+    "";
+
+  const peakImplication =
+    synthesis?.execution?.peak ||
+    synthesis?.scriptBridge?.coreTruth ||
+    extraction?.coreTruth?.insight ||
+    synthesis?.pain?.real ||
+    "";
+
+  // ─────────────────────────────────────────────────────────────
+  // VALIDATE fields — fallback chain
+  // ─────────────────────────────────────────────────────────────
+
+  const structuralProof =
+    synthesis?.coreEngine?.contradiction ||
+    primaryContradiction ||
+    "";
+
+  const structuralGap =
+    synthesis?.coreEngine?.noWinLoop || "";
+
+  const validationLine =
+    synthesis?.beliefShift?.to ||
+    extraction?.coreTruth?.insight ||
+    "";
+
+  // ─────────────────────────────────────────────────────────────
+  // FRAMEWORK fields — fallback chain
+  // ─────────────────────────────────────────────────────────────
+
+  const reframeLens =
+    synthesis?.beliefShift?.to ||
+    synthesis?.scriptBridge?.coreTruth ||
+    synthesis?.execution?.end ||
+    "";
+
+  const concreteAction =
+    synthesis?.forwardTension?.aspirationalGlimpse ||
+    synthesis?.scriptBridge?.optionA?.action ||
+    extraction?.audience?.commentInsight?.unspokenNeed ||
+    "";
+
+  const openEdge =
+    extraction?.coreTruth?.insight ||
+    synthesis?.coreEngine?.contradiction ||
+    "";
+
+  // ─────────────────────────────────────────────────────────────
+  // CLOSE fields — fallback chain
+  // ─────────────────────────────────────────────────────────────
+
+  const debateQuestion =
+    synthesis?.forwardTension?.openQuestion ||
+    primaryContradiction ||
     "";
 
   // ─────────────────────────────────────────────────────────────
@@ -80,7 +157,7 @@ export function mapToScriptInputs(data: any, previousOutputs: Record<string, str
     .join(" ");
 
   // ─────────────────────────────────────────────────────────────
-  // SYSTEM VARS
+  // SYSTEM VARS — per section
   // ─────────────────────────────────────────────────────────────
 
   const sys = (section: string, prev?: string) => {
@@ -90,154 +167,78 @@ export function mapToScriptInputs(data: any, previousOutputs: Record<string, str
       arcContract: buildArcContract(section as any),
 
       identityLock: buildIdentityLock({
-        age:
-          extraction?.viewerProfile?.ageRange ||
-          "late 20s",
-
-        income:
-          extraction?.viewerProfile?.incomeOrSituation ||
-          "unstable income",
-
-        job:
-          extraction?.audience?.profile ||
-          "works online",
-
+        age: extraction?.viewerProfile?.ageRange || "",
+        income: extraction?.viewerProfile?.incomeOrSituation || "",
+        job: extraction?.audience?.profile || "",
         livingSituation: primaryScenario,
       }),
 
       voice: buildVoice(
         characterProse || primaryPain,
-        VOICE_PRESET[section] || "resigned",
+        VOICE_PRESET[section] || "conspiratorial",
         prev ? VOICE_PRESET[prev] : undefined
       ),
 
       lastLines: prevOutput
         ? prevOutput.trim().split("\n").filter(Boolean).slice(-4).join("\n")
-        : "Opening section — no previous lines.",
-
-      physicalDetail:
-        synthesis?.anchors?.[0]?.physicalDetail ||
-        primaryScenario,
-
-      scriptMemory:
-        synthesis?.beliefShift?.breakMoment ||
-        synthesis?.pain?.real ||
-        primaryScenario,
-
-      habitLoop: primaryLoop,
-
-      almostMoment:
-        synthesis?.anchors?.find(
-          (a: any) => a?.emotion === "relief"
-        )?.scenario ||
-        synthesis?.anchors?.[0]?.scenario ||
-        primaryScenario,
+        : "",
     };
   };
 
   return {
+
+    // ── HOOK ─────────────────────────────────────────────────────
     hook: {
       ...sys("hook"),
-
       rawPain:
         extraction?.audience?.painMap?.[0]?.pain ||
         synthesis?.pain?.surface ||
-        primaryPain,
-
+        "",
       contradiction: primaryContradiction,
-
-      falseBelief:
-        synthesis?.beliefShift?.from ||
-        "If I keep pushing harder it'll eventually work.",
-
+      falseBelief: synthesis?.beliefShift?.from || "",
       openQuestion: primaryOpenQuestion,
     },
 
-    setup: {
-      ...sys("setup", "hook"),
+    // ── CRACK ────────────────────────────────────────────────────
+    crack: {
+      ...sys("crack", "hook"),
+      falseBelief: synthesis?.beliefShift?.from || "",
+      crackMoment: synthesis?.beliefShift?.breakMoment || "",
+      contradiction: primaryContradiction,
+    },
 
-      scenario:
-        extraction?.audience?.painMap?.[0]?.realScenario ||
-        primaryScenario,
-
+    // ── EXPOSE ───────────────────────────────────────────────────
+    expose: {
+      ...sys("expose", "crack"),
+      villainEntity,
+      villainMechanism,
       behaviorLoop: primaryLoop,
-
-      behaviorCost:
-        synthesis?.pain?.real ||
-        primaryPain,
-
-      constraint:
-        synthesis?.pain?.scenario ||
-        primaryScenario,
+      peakImplication,
     },
 
-    contradiction: {
-      ...sys("contradiction", "setup"),
-
-      optionAAction:
-        synthesis?.coreEngine?.noWinLoop ||
-        "Keep grinding harder",
-
-      optionACost:
-        synthesis?.coreEngine?.identityPressure ||
-        "Gets more exhausted",
-
-      optionBAction:
-        synthesis?.beliefShift?.from ||
-        "Try changing direction",
-
-      optionBCost:
-        synthesis?.beliefShift?.to ||
-        "Might lose stability completely",
-
-      noWinAsymmetry:
-        primaryContradiction,
-
-      fearIfNotAct:
-        synthesis?.coreEngine?.identityPressure ||
-        "Nothing changes if he stays the same",
+    // ── VALIDATE ─────────────────────────────────────────────────
+    validate: {
+      ...sys("validate", "expose"),
+      structuralProof,
+      structuralGap,
+      validationLine,
     },
 
-    reframe: {
-      ...sys("reframe", "contradiction"),
-
-      falseBelief:
-        synthesis?.coreEngine?.contradiction ||
-        primaryContradiction,
-
-      crackMoment:
-        synthesis?.beliefShift?.breakMoment ||
-        "Something about the pattern stopped feeling normal.",
-
-      hiddenTruth:
-        synthesis?.beliefShift?.to ||
-        "Maybe the system itself changed.",
-
-      aspirationalGlimpse: primaryAspirationalGlimpse,
+    // ── FRAMEWORK ────────────────────────────────────────────────
+    framework: {
+      ...sys("framework", "validate"),
+      reframeLens,
+      concreteAction,
+      openEdge,
     },
 
-    solution: {
-      ...sys("solution", "reframe"),
-
-      unspokenNeed:
-        extraction?.audience?.commentInsight?.unspokenNeed ||
-        "Needs relief more than motivation.",
-
-      behaviorLoop: primaryLoop,
-
-      aspirationalGlimpse: primaryAspirationalGlimpse,
-    },
-
+    // ── CLOSE ────────────────────────────────────────────────────
     close: {
-      ...sys("close", "solution"),
-
-      coreTruth:
-        extraction?.coreTruth?.insight ||
-        "The pressure never fully leaves.",
-
-      coreBelief:
-        extraction?.viewerProfile?.coreBelief ||
-        "Hard work is supposed to fix things.",
+      ...sys("close", "framework"),
+      debateQuestion,
+      sideA: synthesis?.beliefShift?.from || "",
+      sideB: synthesis?.beliefShift?.to || "",
+      coreTruth: extraction?.coreTruth?.insight || "",
     },
   };
 }

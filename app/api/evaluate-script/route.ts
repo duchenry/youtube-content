@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     // ─────────────────────────────────────
     // BUILD PROMPT
     // ─────────────────────────────────────
-
+    console.log("fullScript", fullScript)
     const prompt = buildScriptEvaluatePrompt(fullScript);
 
     // ─────────────────────────────────────
@@ -93,6 +93,33 @@ export async function POST(req: Request) {
         .trim();
 
       result = JSON.parse(cleaned);
+
+      // ─────────────────────────────────────
+      // NORMALIZE RESULT SHAPE
+      // ─────────────────────────────────────
+
+      result = {
+        motifFlags: Array.isArray(result?.motifFlags)
+          ? result.motifFlags
+          : [],
+        tensionCurve: Array.isArray(result?.tensionCurve)
+          ? result.tensionCurve
+          : [],
+        anchorOveruse: Array.isArray(result?.anchorOveruse)
+          ? result.anchorOveruse
+          : [],
+        conclusiveEndings: Array.isArray(result?.conclusiveEndings)
+          ? result.conclusiveEndings
+          : [],
+        sectionContractFlags: Array.isArray(result?.sectionContractFlags)
+          ? result.sectionContractFlags
+          : [],
+        summary: {
+          passCount: Number(result?.summary?.passCount ?? 0),
+          flagCount: Number(result?.summary?.flagCount ?? 0),
+          critical: Boolean(result?.summary?.critical ?? false),
+        },
+      };
     } catch (err) {
       console.error("❌ JSON parse failed");
       console.error("RAW:", raw.text);

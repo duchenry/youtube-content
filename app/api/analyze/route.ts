@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { EXTRACTION_PROMPT } from "@/app/lib/prompts/extraction";
-import { INTERPRET_PROMPT } from "@/app/lib/prompts/interpret";
 import { callModel } from "@/app/lib/openai";
 import { normalizeExtraction } from "@/app/lib/normalizers";
 import type { AnalysisResult } from "@/app/lib/types";
@@ -84,38 +83,12 @@ export async function POST(req: NextRequest) {
       extractionObject,
       topComments
     );
-
-    // ─────────────────────────────
-    // STEP 2: INTERPRETATION
-    // ─────────────────────────────
-
-    let interpretation = null;
-
-    try {
-      const interpretPrompt = INTERPRET_PROMPT.replace(
-        "{{INPUT.extraction}}",
-        JSON.stringify(extractionNormalized, null, 2)
-      );
-
-      const raw = await callModel(
-        interpretPrompt,
-        process.env.CLAUDE_MODEL_ANALYZE?.trim() || "claude-sonnet-4-6",
-        2000
-      );
-
-      interpretation = safeParseJSON(raw);
-    } catch (e) {
-      console.error("[interpretation error]", e);
-      interpretation = null;
-    }
-
     // ─────────────────────────────
     // FINAL RESPONSE
     // ─────────────────────────────
 
     return NextResponse.json({
       result: extractionNormalized,
-      interpretation,
     });
   } catch (err) {
     console.error("[POST ERROR]", err);

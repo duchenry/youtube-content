@@ -31,9 +31,8 @@ export async function POST(req: NextRequest) {
     const parsed = await callModel(
       prompt,
       process.env.CLAUDE_MODEL_ENRICH?.trim() || "claude-sonnet-4-6",
-      Number(process.env.ENRICH_MAX_TOKENS || 6000),
+      Number(process.env.ENRICH_MAX_TOKENS || 3500),
     );
-
     return NextResponse.json({ result: normalizeSynthesis(parsed) });
   } catch (err: unknown) {
     console.error("[/api/enrich]", err);

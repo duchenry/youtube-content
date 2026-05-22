@@ -78,6 +78,11 @@ OUTPUT SCHEMA
     }
   },
 
+  "competitorPosition": {
+    "stanceInStory": "before_problem | explain_mechanism | inside_feeling | after_advice",
+    "voiceType": "authority | validator | investigator | contrarian"
+  },
+
   "audience": {
     "profile": "Specific viewer type (not generic)",
 
@@ -87,6 +92,11 @@ OUTPUT SCHEMA
         "realScenario": "Concrete physical situation (no abstract emotion)"
       }
     ],
+
+    "emotionalRegister": {
+      "dominant": "anger | shame | resignation | confusion | hope",
+      "evidence": "Exact quote from comment or transcript supporting this"
+    },
 
     "commentInsight": {
       "repeatedPain": "Most common pain in comments",
@@ -127,6 +137,9 @@ Before finalizing output, ensure:
 - retention is driven by unresolved tension
 - whatTheyAlreadyTried contains one real action + one real failure — not a summary of effort
 - aspirationalAnchor is a moment from the source material, not an inference about hope. If no moment exists: INSUFFICIENT_DATA
+- competitorPosition.stanceInStory is one of the four exact values — not a description
+- emotionalRegister.dominant is one word — not a sentence
+- emotionalRegister.evidence is a direct quote — not a paraphrase
 
 If output feels generic → make it more specific.
 `;

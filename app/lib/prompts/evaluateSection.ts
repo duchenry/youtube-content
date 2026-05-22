@@ -1,16 +1,104 @@
+// app/lib/prompts/evaluateSection.ts
+
 import { buildArcContract } from "./scriptGenerator";
 import { ENERGY_MAP, VOICE_PRESET } from "./scriptInputMapper";
 
 // ─────────────────────────────────────────────────────────────
-// HELPER — extract first line from buildArcContract output
+// HELPERS
 // ─────────────────────────────────────────────────────────────
 
 export function getArcPosition(section: string): string {
   return buildArcContract(section as any).split("\n")[0];
 }
 
+const VALID_SECTIONS = new Set([
+  "hook",
+  "crack",
+  "expose",
+  "validate",
+  "framework",
+  "close",
+]);
+
+function safeEnergyLookup(
+  section: string,
+  map: Record<string, string>,
+  fallback: string
+): string {
+  if (!VALID_SECTIONS.has(section)) {
+    console.warn(
+      `[buildEvaluatePrompt] Unknown section key: "${section}" — using fallback`
+    );
+    return fallback;
+  }
+
+  return map[section] ?? fallback;
+}
+
+function formatList(items: any[], formatter: (item: any) => string): string {
+  if (!Array.isArray(items) || items.length === 0) return "None";
+  return items.map(formatter).join("\n");
+}
+
+// ─────────────────────────────────────────────────────────────
+// SECTION QUALITY CONTRACT
+// Keep compact. Section-specific standards only.
+// ─────────────────────────────────────────────────────────────
+
+function getSectionRetentionJob(section: string): string {
+  switch (section) {
+    case "hook":
+      return `HOOK: create unresolved contradiction and curiosity.
+Viewer should ask: "How can both things be true?"
+Needs concrete proof: number, object, action, consequence, or comparison.
+Do not explain the mechanism.
+Do not punish a short contradiction frame if concrete proof arrives quickly.
+Prefer a final image or contrast that points toward the video's core truth.`;
+
+    case "crack":
+      return `CRACK: break the viewer's current explanation.
+Viewer should feel: "This is not the reason I thought it was."
+Use behavior, numbers, payments, or concrete choices before interpretation.
+Do not fully name the mechanism yet.
+Flag if crack explains identity logic, baseline, system, or framework too cleanly.`;
+
+    case "expose":
+      return `EXPOSE: reveal the mechanism behind the problem.
+Viewer should feel: "That's the loop I'm stuck in."
+Name the mechanism only after concrete pressure is felt.
+Prefer one clear cause/effect loop over repeated explanation.`;
+
+    case "validate":
+      return `VALIDATE: make the viewer feel accurately seen.
+Viewer should feel: "This knows exactly what I do."
+Use recognizable behavior, private habit, guilt, self-justification, or physical action.
+Do not reassure before proving.`;
+
+    case "framework":
+      return `FRAMEWORK: give the viewer a new lens.
+Viewer should feel: "I've been measuring this wrong."
+Give a lens, not a full solution.
+Prove the old lens fails before naming the new one.`;
+
+    case "close":
+      return `CLOSE: end on debate pressure or sharp unresolved pressure.
+Do not summarize the lesson.
+Do not wind down.
+Prefer a final contrast, question, image, or unresolved cost.`;
+
+    default:
+      return `SECTION: preserve tension, specificity, and forward movement.
+Flag only issues that weaken the section's job.`;
+  }
+}
+
 // ─────────────────────────────────────────────────────────────
 // BUILD EVALUATE PROMPT
+// API 1 responsibility:
+// - Detect line_edit or structure_edit
+// - Add short user-facing decision summary
+// - Do NOT generate rewriteOptions
+// - Do NOT generate rewriteHint
 // ─────────────────────────────────────────────────────────────
 
 export function buildEvaluatePrompt({
@@ -29,35 +117,98 @@ export function buildEvaluatePrompt({
     overusedAnchors: any[];
     tensionWarnings: any[];
     conclusiveRisks: any[];
+    sectionContractFlags?: any[];
   };
 }): string {
   const arcPosition = getArcPosition(section);
-  const expectedVoice = VOICE_PRESET[section] ?? "resigned";
-  const expectedEnergy =
-    ENERGY_MAP[section] ?? "low — flat, no energy for meaning";
+
+  const expectedVoice = safeEnergyLookup(
+    section,
+    VOICE_PRESET as Record<string, string>,
+    "conspiratorial"
+  );
+
+  const expectedEnergy = safeEnergyLookup(
+    section,
+    ENERGY_MAP,
+    "low — flat, no energy for meaning"
+  );
+
+  const sectionRetentionJob = getSectionRetentionJob(section);
+
+  const motifWarning = formatList(narrativeState.overusedMotifs, (m) => {
+    const sections = Array.isArray(m.appearances)
+      ? m.appearances
+          .map((a: any) => a?.section)
+          .filter(Boolean)
+          .join(", ")
+      : "";
+
+    const advice =
+      typeof m.advice === "string" && m.advice.trim()
+        ? ` Advice: ${m.advice.trim()}`
+        : "";
+
+    return sections
+      ? `- "${m.motif}" seen in ${sections}.${advice}`
+      : `- "${m.motif}" is overused.${advice}`;
+  });
+
+  const anchorWarning = formatList(narrativeState.overusedAnchors, (a) => {
+    const sections = Array.isArray(a.sections)
+      ? a.sections.filter(Boolean).join(", ")
+      : "";
+
+    const advice =
+      typeof a.advice === "string" && a.advice.trim()
+        ? ` Advice: ${a.advice.trim()}`
+        : "";
+
+    return sections
+      ? `- "${a.detail}" in ${sections}.${advice}`
+      : `- "${a.detail}" is overused.${advice}`;
+  });
+
+  const tensionWarning = formatList(narrativeState.tensionWarnings, (t) => {
+    const advice =
+      typeof t.advice === "string" && t.advice.trim()
+        ? ` Advice: ${t.advice.trim()}`
+        : "";
+
+    return `- ${t.section}: ${t.issue}${advice}`;
+  });
+
+  const conclusiveWarning = formatList(narrativeState.conclusiveRisks, (c) => {
+    const advice =
+      typeof c.advice === "string" && c.advice.trim()
+        ? ` Advice: ${c.advice.trim()}`
+        : "";
+
+    return `- ${c.section}: "${c.quote}" — ${c.issue}${advice}`;
+  });
+
+  const contractWarning = formatList(
+    narrativeState.sectionContractFlags ?? [],
+    (f) => {
+      const quote =
+        typeof f.quote === "string" && f.quote.trim()
+          ? ` Quote: "${f.quote.trim()}".`
+          : "";
+
+      const advice =
+        typeof f.advice === "string" && f.advice.trim()
+          ? ` Advice: ${f.advice.trim()}`
+          : "";
+
+      return `- ${f.section}: ${f.issue}.${quote}${advice}`;
+    }
+  );
 
   return `
-You are a HIGH-PRECISION narrative editor for personal finance storytelling.
+You are a high-precision structural editor for long-form personal finance voiceover scripts.
 
-━━━━━━━━━━━━━━━━━━━
-VOICE STANDARD
-━━━━━━━━━━━━━━━━━━━
-This content targets American men, 20–45, low income, financially stressed.
-They reject polished writing. They respond to:
-
-- Physical specificity over emotional explanation
-- Contradiction and self-awareness ("I know I shouldn't. I still do.")
-- Unresolved sentences that stop mid-thought
-
-GOOD EXAMPLES:
-✓ "I checked Zillow at 2am. Nothing changed. I still checked."
-✓ "I told my coworker I'm close. I've been saying that for two years."
-✓ "Rent went up $425. My paycheck didn't."
-
-BAD EXAMPLES:
-✗ Emotional explanation ("I felt hopeless")
-✗ Clean conclusions or lessons
-✗ Generic personal finance language
+Analyze ONLY CURRENT section.
+Return max 2 highest-impact issues.
 
 ━━━━━━━━━━━━━━━━━━━
 SECTION CONTEXT
@@ -66,6 +217,9 @@ SECTION: ${section}
 ARC POSITION: ${arcPosition}
 EXPECTED ENERGY: ${expectedEnergy}
 EXPECTED VOICE: ${expectedVoice}
+
+SECTION QUALITY CONTRACT:
+${sectionRetentionJob}
 
 [PREVIOUS — FLOW REFERENCE ONLY]
 ${previous}
@@ -80,253 +234,199 @@ ${next}
 [END NEXT]
 
 ━━━━━━━━━━━━━━━━━━━
-HOW TO USE CONTEXT
+GLOBAL SIGNALS FROM FULL-SCRIPT EVALUATION
 ━━━━━━━━━━━━━━━━━━━
-- PREVIOUS/NEXT are STRICTLY reference-only
-- Only use them for tone break or psychological mismatch
-- Never use them to judge clarity or writing quality
+These signals are important cross-section evidence.
 
-━━━━━━━━━━━━━━━━━━━
-ARC EVALUATION RULE (READ BEFORE FLAGGING ANYTHING)
-━━━━━━━━━━━━━━━━━━━
-Check EXPECTED ENERGY before flagging any issue.
+Check global signals before inventing unrelated local preferences.
+If a global signal clearly applies to CURRENT, consider it strongly.
 
-If EXPECTED ENERGY contains "flat", "low", "dissipating", or "ambient":
-- DO NOT flag flat sentences as issues
-- DO NOT flag trailing or unresolved endings as issues
-- DO NOT flag short or incomplete sentences as issues
-- Only flag if a sentence is actively clean, conclusive, or emotionally explained
-- Flatness still requires psychological pressure or avoidance underneath
+However, do not let a lower-impact global repetition issue override a higher-impact section-contract failure.
+The goal is not to mechanically satisfy global signals.
+The goal is to return the 1–2 issues that most weaken CURRENT's section job, retention, tension, or human feel.
 
-If EXPECTED ENERGY contains "peak" or "tightening":
-- Flag sentences longer than 15 words as energy mismatch
-- Flag flat or resolved sentences as arc violation
-- Flag any sentence that softens or summarizes
+Only skip a global signal if:
+- CURRENT no longer contains the quoted problem
+- the signal is clearly not confirmed by CURRENT
+- a section-contract failure is more damaging than the global issue
 
-If EXPECTED ENERGY contains "deflating" or "quieter":
-- Allow flatness — it is correct here
-- Only flag if a sentence sounds polished or lands with force
+Section contract flags:
+${contractWarning}
 
-━━━━━━━━━━━━━━━━━━━
-GLOBAL SCRIPT STATE
-━━━━━━━━━━━━━━━━━━━
+Tension warnings:
+${tensionWarning}
 
-The full script evaluator has already detected structural risks.
+Conclusive risks:
+${conclusiveWarning}
 
-When analyzing CURRENT:
-- Repeated motifs lose emotional weight
-- Repeated gestures become predictable and synthetic
-- Repeated anchors must escalate meaning or mutate psychologically
-- Do not re-use emotional mechanics without new consequence or contradiction
-- A repeated motif is NOT automatically a failure
-- Callbacks are allowed if emotional meaning changes
-- Only flag repetition when reuse adds no new consequence or tension
-- Ending callbacks may be intentional compression
+Overused anchors:
+${anchorWarning}
 
-OVERUSED MOTIFS:
-${JSON.stringify(narrativeState.overusedMotifs, null, 2)}
-
-OVERUSED ANCHORS:
-${JSON.stringify(narrativeState.overusedAnchors, null, 2)}
-
-TENSION WARNINGS:
-${JSON.stringify(narrativeState.tensionWarnings, null, 2)}
-
-CONCLUSIVE RISKS:
-${JSON.stringify(narrativeState.conclusiveRisks, null, 2)}
+Overused motifs:
+${motifWarning}
 
 ━━━━━━━━━━━━━━━━━━━
-STRICT RULES (CRITICAL)
+EDIT DECISION RULES
 ━━━━━━━━━━━━━━━━━━━
-- Analyze ONLY CURRENT
-- Each issue MUST quote EXACT substring from CURRENT
-- DO NOT paraphrase quotes
-- DO NOT suggest full rewrites
-- DO NOT exceed 4 issues
-- Apply confidence thresholds below — skip anything under threshold
-- If no strong issue → return empty
 
-━━━━━━━━━━━━━━━━━━━
-CONFIDENCE THRESHOLDS (by issue type)
-━━━━━━━━━━━━━━━━━━━
-Apply per-issue thresholds. Skip if confidence is below:
+1. PRIORITY ORDER
+Choose the 1–2 highest-impact confirmed issues using this order:
 
-- Issue 1 — Emotion explained instead of shown: skip if <75%
-- Issue 2 — Clean conclusion / moral / wrapped thought: skip if <75%
-- Issue 3 — Generic phrasing (no physical detail, no numbers, no real moment): skip if <60%
-- Issue 4 — Tone break (context mismatch): skip if <80%
-- Issue 5 — Psychological mismatch (arc violation): skip if <80%
+A. Confirmed sectionContractFlags for CURRENT
+B. A section-job failure that damages retention, tension, section role, or human feel
+C. Premature mechanism, wrong-section explanation, or naming the idea too early
+D. Confirmed tensionWarnings or conclusiveRisks for CURRENT
+E. Confirmed overusedMotifs or overusedAnchors in CURRENT
+F. Local repetition, compression, or phrasing issues
 
-Issue 3 has the lowest threshold because generic phrasing is accumulative —
-multiple small generic sentences create high AI feel even when no single
-sentence is obviously flaggable at 80%.
+If two issues have similar impact, prefer the confirmed global signal.
+If a local section-contract failure is clearly more damaging, prioritize it over a lower-impact global repetition signal.
 
-━━━━━━━━━━━━━━━━━━━
-ISSUE PRIORITY
-━━━━━━━━━━━━━━━━━━━
-1. Emotion explained instead of shown in action
-2. Clean conclusion / moral / wrapped thought
-3. Generic phrasing (no physical detail, no numbers, no real moment)
-4. Tone break (only if context mismatch is strong)
-5. Psychological mismatch (only if arc violation is clear)
+2. SECTION-CONTRACT RULE
+Check whether CURRENT fulfills its section quality contract.
+Flag issues that materially weaken retention, tension, section role, or human feel.
+Do not treat the section as successful just because it contains strong lines.
 
-━━━━━━━━━━━━━━━━━━━
-IMPACT CONTROL
-━━━━━━━━━━━━━━━━━━━
-For each issue, estimate:
+3. USER DECISION SUMMARY
+Return 3 short user-facing fields before edits:
 
-- "impactLevel": low | medium | high
-  (how much this breaks overall narrative flow)
+verdict:
+- max 10 words
+- say if the section is usable, needs one fix, or needs major revision
 
-━━━━━━━━━━━━━━━━━━━
-ANCHOR RULE
-━━━━━━━━━━━━━━━━━━━
-"anchor" in rewriteHint must reference a specific detail
-already present in CURRENT or PREVIOUS.
-Never invent new details.
-Use what already exists in the script — a number, an object, a repeated action.
-
-GOOD anchor: "$130", "the calculator app", "Sunday night", "the neighbor's light"
-BAD anchor: "a sense of dread", "the weight of it all", "something familiar"
-
-━━━━━━━━━━━━━━━━━━━
-REPETITION EXCEPTION
-━━━━━━━━━━━━━━━━━━━
-Do NOT flag repetition if:
-- the repeated phrase escalates psychologically
-- the number changes meaningfully ($60k → $95k → $100k)
-- the repetition reflects compulsive financial bargaining
-- the repetition creates momentum or unresolved obsession
-
-Only flag repetition if it feels mechanically recycled
-without new pressure, escalation, or psychological shift.
-
-━━━━━━━━━━━━━━━━━━━
-REWRITE OPTION RULES
-━━━━━━━━━━━━━━━━━━━
-Each issue must include exactly 3 rewriteOptions.
-
-Each rewriteOption must:
-- directly replace the flagged quote
-- sound like a real line from the script
-- preserve the same emotional context
-- solve the issue through a DIFFERENT mechanism
-
-Allowed mechanisms include:
-- avoidance
-- implication
-- physical behavior
-- environmental tension
-- interruption
-- contradiction
-- escalation
-- silence
-- deflection
-- compression
-- unresolved trailing thought
-
-Requirements:
+mainProblem:
 - max 18 words
-- no explanations
-- no commentary
-- no polished writing
-- no moralizing
-- no generic finance phrasing
-- each option must feel human and incomplete when appropriate
-- use existing anchors/details when possible
-- DO NOT repeat the original structure mechanically
+- name the single biggest issue in CURRENT
+- explain the issue, not the solution
 
-The 3 options must feel genuinely different from each other.
+highestROIEdit:
+- max 22 words
+- tell the user what to fix first
+- must align with the highest-impact edit when edits exist
 
-BAD:
-- three variations of the same physical action
-- same sentence rhythm repeated
-- same emotional conclusion phrased differently
+If no strong issue:
+- verdict = "Usable as is."
+- mainProblem = ""
+- highestROIEdit = ""
 
-GOOD:
-- one option hides emotion through behavior
-- one externalizes pressure into environment
-- one interrupts the thought before resolution
+4. MINIMUM EDIT RULE
+Choose the smallest useful quote that fixes the issue.
+Do not cut a large block if changing one opening sentence, repeated anchor, or premature label would solve the problem.
+Preserve long-form density.
 
-━━━━━━━━━━━━━━━━━━━
-REWRITE SCORING RULES
-━━━━━━━━━━━━━━━━━━━
-Score each rewriteOption from 1-10.
+5. GLOBAL SIGNAL TRIAGE
+When a repeated motif or anchor appears in CURRENT:
+- preserve it if this is clearly the strongest necessary use
+- flag it if CURRENT repeats it without new pressure, new function, or forward movement
+- prefer replacing the repeated local anchor over deleting the surrounding section
 
-Higher scores should:
-- preserve tension
-- avoid explanation
-- feel observational instead of written
-- maintain arc energy correctly
-- avoid sounding performative or literary
-- introduce new psychological pressure or implication
-- feel naturally spoken or naturally unfinished
+6. LONG-FORM STANDARD
+Do not optimize for punchiness alone.
+Do not replace a deeper lifestyle/status tradeoff with a simpler cash-gap punchline unless the tradeoff is unclear.
+A short contradiction frame is allowed if concrete proof arrives quickly.
 
-Lower scores should:
-- sound too polished
-- summarize emotion
-- repeat existing mechanics
-- feel like obvious AI realism
-- over-explain the character psychology
+7. REPETITION CHECK
+Flag setup/payoff repetition when an earlier setup line and final payoff use nearly identical wording and weaken the final line.
+Prefer preserving the stronger payoff line and changing the earlier setup line.
 
-Scores must be relative across the 3 options.
-Do not give all options the same score.
+8. ADJACENT FLOW CHECK
+Flag if CURRENT opens by repeating the prior section's dominant concrete scene, object, number, action, comparison, or time marker without new function.
+Do not require exact sentence repetition.
+Do not flag if the repeated anchor is clearly reframed with new consequence, reversal, or escalation.
 
 ━━━━━━━━━━━━━━━━━━━
-OUTPUT FORMAT (STRICT JSON)
+EDIT TYPES
 ━━━━━━━━━━━━━━━━━━━
+Use "line_edit" for most issues.
+Use "structure_edit" only when moving or cutting a block is clearly better than replacing a sentence.
+
+For structure_edit:
+- action must be "move" or "cut"
+- use "cut" only when the quoted block is disposable or belongs entirely to another section
+- do not use "cut" just because a useful block explains too much
+- if a block contains useful pressure but names the idea too cleanly, use line_edit on the smallest offending sentence
+- for "move", placement is required
+
+━━━━━━━━━━━━━━━━━━━
+QUOTE RULE
+━━━━━━━━━━━━━━━━━━━
+Every quote must be an exact substring from CURRENT.
+
+For line_edit:
+- quote must be directly replaceable
+- choose the smallest complete sentence/clause that can be safely replaced
+- do not quote a tiny phrase if the issue belongs to the full sentence
+
+For structure_edit:
+- quote must be the exact block to cut or move
+- quote must be small enough to avoid unrelated surrounding lines
+- anchorQuote is required only for action "move"
+- anchorQuote must be a separate exact substring from CURRENT
+
+━━━━━━━━━━━━━━━━━━━
+OUTPUT FORMAT
+━━━━━━━━━━━━━━━━━━━
+Return ONLY valid JSON.
+No markdown.
+No explanation.
+No text before or after JSON.
+Do NOT include rewriteOptions.
+Do NOT include rewriteHint.
+
 {
+  "verdict": "short user-facing verdict",
+  "mainProblem": "single biggest problem, or empty string",
+  "highestROIEdit": "what to fix first, or empty string",
   "edits": [
     {
+      "type": "line_edit",
       "quote": "exact sentence or fragment from CURRENT",
-      "issue": "FAILURE TYPE — precise reason",
+      "issue": "specific failure type and reason",
       "impactLevel": "low | medium | high",
-      "suggestion": "max 20 words, direction only, NO rewrite",
-
-      "rewriteHint": {
-        "rhythm": "short | broken | trailing | heavy",
-        "action": "what character is physically doing",
-        "omission": "what must NOT be explicitly stated",
-        "anchor": "specific object, number, or action already present in CURRENT or PREVIOUS"
-      },
-
-      "rewriteOptions": [
-        {
-          "type": "avoidance",
-          "text": "replacement sentence here",
-          "score": number,
-          "reason": "short scoring explanation"        
-},
-        {
-          "type": "environment",
-          "text": "replacement sentence here",
-          "score": number,
-          "reason": "short scoring explanation"        
-},
-        {
-          "type": "contradiction",
-          "text": "replacement sentence here",
-          "score": number,
-          "reason": "short scoring explanation"        
-}
-      ]
+      "suggestion": "max 20 words, structural direction only"
+    },
+    {
+      "type": "structure_edit",
+      "action": "cut",
+      "quote": "smallest complete block to remove from CURRENT",
+      "issue": "specific retention or structure failure",
+      "impactLevel": "low | medium | high",
+      "suggestion": "max 24 words, clear structural direction"
+    },
+    {
+      "type": "structure_edit",
+      "action": "move",
+      "quote": "smallest complete movable block from CURRENT",
+      "issue": "specific retention or structure failure",
+      "impactLevel": "high",
+      "suggestion": "max 24 words, clear structural direction",
+      "placement": {
+        "move": "before | after",
+        "anchorQuote": "exact sentence or fragment from CURRENT",
+        "reason": "why this placement improves retention and flow",
+        "bridgeSuggestion": "short bridge guidance if needed"
+      }
     }
   ]
 }
 
-━━━━━━━━━━━━━━━━━━━
-EMPTY CASE
-━━━━━━━━━━━━━━━━━━━
-If no issues meet their confidence threshold:
-{ "edits": [] }
+For line_edit:
+- Do NOT include placement.
+- Do NOT include action.
 
-━━━━━━━━━━━━━━━━━━━
-CRITICAL OUTPUT RULES (MUST FOLLOW)
-━━━━━━━━━━━━━━━━━━━
-- Return ONLY valid JSON
-- DO NOT include any explanation
-- DO NOT include markdown (no \`\`\` or \`\`\`json)
-- DO NOT include text before or after JSON
-- Output must be directly parseable by JSON.parse()
+For structure_edit:
+- MUST include action.
+- If action is "cut", do NOT include placement.
+- If action is "move", MUST include placement.
+- Do NOT include rewriteOptions.
+- Do NOT include rewriteHint.
+
+If no strong issue:
+{
+  "verdict": "Usable as is.",
+  "mainProblem": "",
+  "highestROIEdit": "",
+  "edits": []
+}
 `.trim();
 }

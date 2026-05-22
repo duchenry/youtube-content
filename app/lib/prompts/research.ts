@@ -28,6 +28,9 @@ Find the SINGLE strongest contradiction between:
 - effort vs reward
 - belief vs lived experience
 
+Note: competitor stands at {{EXTRACTION_JSON.competitorPosition.stanceInStory}}.
+Extract contradiction from the angle they are NOT covering.
+
 Then extract the *behavioral leakage* of that contradiction.
 
 ━━━━━━━━━━━━━━━━━━━━━
@@ -117,7 +120,7 @@ OUTPUT (STRICT JSON)
     "type": "know_vs_do | belief_collapse | identity_pressure | forced_tradeoff | no_win_loop",
     "description": "1 raw human sentence (NOT explanation)",
     "searchInstinct": "most emotional impulsive fragment",
-    "whyItMatters": "1 line: what psychological release it creates"
+    "whyItMatters": "complete this: viewer searches this because they need to confirm ___"
   },
 
   "searchInstincts": [

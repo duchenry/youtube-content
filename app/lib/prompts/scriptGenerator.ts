@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────
 
 export function buildIdentityLock(facts: {
-  age: number;
+  age: number | string;
   income: string;
   job: string;
   livingSituation: string;
@@ -12,62 +12,73 @@ export function buildIdentityLock(facts: {
   yearsAtJob?: number;
 }): string {
   return `
-IDENTITY LOCK (non-negotiable, never change these across any section):
+VIEWER PROFILE (non-negotiable — never imply a different situation):
 - Age: ${facts.age}
-- Income: ${facts.income}
+- Income / situation: ${facts.income}
 - Job: ${facts.job}
 - Living situation: ${facts.livingSituation}
 ${facts.carYear ? `- Car: ${facts.carYear}` : ""}
 ${facts.city ? `- City: ${facts.city}` : ""}
 ${facts.yearsAtJob ? `- Years at job: ${facts.yearsAtJob}` : ""}
 
-If any sentence implies a different age, income, or situation — rewrite it.
-These facts are not flexible. Do not round, approximate, or vary them.
+Every "you" in this script refers to this exact person.
+Do not round, approximate, or upgrade their situation.
+If a sentence implies more income, more stability, or a different life — rewrite it.
 `.trim();
 }
 
 
 // ─────────────────────────────────────────────────────────────
-// ARC CONTRACT
+// ARC CONTRACT — Arc 3 (Conspiracy Arc)
 // ─────────────────────────────────────────────────────────────
 
 export function buildArcContract(
-  section: "hook" | "setup" | "contradiction" | "reframe" | "solution" | "close"
+  section: "hook" | "crack" | "expose" | "validate" | "framework" | "close"
 ): string {
   const arcMap: Record<string, string> = {
-    hook: `ARC POSITION: Entry — tension level 3/10.
-The reader has just arrived. Establish situation, not emotion.
-Nothing escalates here. Set the frame. Let discomfort be ambient.
-This section should feel like the beginning of a long afternoon, not a crisis.`,
+    hook: `ARC POSITION: Hook — tension level 8/10.
+Viewer has just arrived. Hit them with 1 fact conventional wisdom cannot explain.
+Do NOT explain it. Do NOT comfort them. Let the dissonance sit.
+Their job: feel that something is wrong — specifically, not vaguely.
+End on the unresolved question — implied or stated. Never answer it here.
+Viewer state leaving this section: "This doesn't add up."`,
 
-    setup: `ARC POSITION: Slow build — tension level 4–5/10.
-Something is tightening but the character is still functional.
-The loop becomes visible. Cost becomes real but not unbearable yet.
-Do not peak here. The reader should feel pressure building, not arriving.`,
+    crack: `ARC POSITION: Crack — tension level 7/10.
+Show why the assumption the viewer has been living with is wrong.
+Not a revelation — a crack. Something they almost knew but didn't say out loud.
+Use 1 specific scenario to make the crack visible.
+Address the viewer directly — "you", "you've been", "you're doing".
+Do not explain the full mechanism yet. Just show the seam.
+Viewer state leaving this section: "Wait, why is that?"`,
 
-    contradiction: `ARC POSITION: Peak — tension level 7–8/10.
-This is the highest tension in the script.
-The trap is fully visible. Both exits are closed.
-Sentences should be shorter than any previous section.
-Do not resolve. Do not soften. Let it sit at peak.`,
+    expose: `ARC POSITION: Expose — tension level 9/10.
+Name the villain mechanism. Not a person — a system, a structure, an incentive.
+Show how it operates without the viewer's awareness.
+Highest information density section.
+The viewer is the target of the mechanism — make that clear.
+End on the most uncomfortable implication. Do not soften it.
+Viewer state leaving this section: "Who designed this?"`,
 
-    reframe: `ARC POSITION: Crack — tension level 5–6/10.
-Tension drops from peak but does not release.
-Something shifted — not forward, just sideways.
-The character notices something he can't un-notice.
-Quieter than contradiction. More uncertain. Less contained.`,
+    validate: `ARC POSITION: Validate — tension level 7/10.
+Release shame — but only through proof, not reassurance.
+Never validate before showing the structural evidence first.
+Structure: proof → gap → validation.
+One sentence must be screenshot-able.
+Viewer state leaving this section: "So I'm not failing?"`,
 
-    solution: `ARC POSITION: Deflation — tension level 3–4/10.
-The character is trying to move but the loop reasserts.
-Energy is lower than any previous section.
-Options are considered with low conviction. Nothing lands.
-This section should feel like running out of things to say.`,
+    framework: `ARC POSITION: Framework — tension level 6/10.
+Give the viewer a new lens — not a solution, a way of seeing.
+Specific enough to apply to their situation today.
+Include 1 concrete action that becomes possible with this lens.
+End with an open edge — something the framework does not yet answer.
+Viewer state leaving this section: "Okay, so what if I looked at it this way?"`,
 
-    close: `ARC POSITION: Dissipation — tension level 1–2/10.
-The script doesn't end. It stops.
-Smallest observations. Flattest sentences. No energy for meaning.
-If a sentence feels significant — cut it or flatten it.
-The last sentence should be the least important sentence in the script.`,
+    close: `ARC POSITION: Close — tension level 9/10.
+Do NOT summarize. Do NOT conclude.
+End on a question that divides the room — forces the viewer to pick a side.
+The question must have a defensible answer on both sides.
+The last sentence is the most important sentence in the script.
+Viewer state leaving this section: "I agree / disagree — I need to comment."`,
   };
 
   return arcMap[section];
@@ -81,64 +92,44 @@ The last sentence should be the least important sentence in the script.`,
 export const GLOBAL_SCRIPT_RULES = `
 GLOBAL RULES (apply to ALL sections):
 
+VOICE: Second person throughout — "you", "you've been", "you're doing".
+Never third person. Never narrate about "people" or "most folks".
+The viewer IS the subject of every sentence that matters.
+
 NEVER do this:
-- Conclude or wrap anything up
-- Explain what the character is feeling
-- Use clean symmetry or polished phrasing
-- Write a sentence that sounds like writing
-- Start with "I" more than twice in a row
-- Use: "despite", "however", "I realized", "I felt like", "at the end of the day"
-- Make every object carry emotional weight — some details must mean nothing
+- Summarize what was just said
+- Explain what the viewer should feel
+- Use: "despite", "however", "the truth is", "it's important to note"
+- Validate before showing proof
+- End a section on reassurance — end on tension or open question
+- Generate statistics or numbers not present in the input data
 
 ALWAYS do this:
-- Physical details over abstraction (a number, an object, a sound, a smell)
-- Let some details be dead — observational waste with no symbolic purpose
-- Imperfect grammar if it carries feeling
-- If a sentence feels too clean → break it or cut it
+- Lead with the most surprising or uncomfortable thing first
+- Every claim grounded in input data — mechanism, scenario, or pattern from synthesis
+- Short sentences for impact. Longer sentences for mechanism explanation.
+- One sentence per section must be screenshot-able
+- Direct address — pull the viewer into the mechanism, not around it
 
-DEAD DETAIL RULE:
-At least 1 detail per section must be purely observational — no emotional load.
-It is just there. It does not symbolize anything.
+VILLAIN RULE:
+The villain is always a mechanism — never a person or group.
+Name it specifically. Show how it operates, not just that it exists.
 
-GOOD dead details:
-"The microwave clock is wrong by four minutes."
-"There's a pen on the counter that's probably out of ink."
-"The neighbor's car is blue."
+DEBATE RULE:
+Every section must contain 1 point a reasonable person could disagree with.
+Agreement without friction = no comments = no reach.
 
-BAD (everything loaded):
-"The chipped glass caught the light again."
-"The same stain on the same carpet."
-"The garlic smell through the vents."
+NO FABRICATION RULE:
+Do not generate any number, statistic, or named mechanism
+that is not present in the input variables.
+If input is thin — use the mechanism and scenario. Do not invent proof.
 
-REPETITION CAP:
-Any motif, object, or emotional construction may appear MAX 2 times per script.
-On second appearance: shorter, flatter, no development.
-Never three times.
-
-DIALOGUE RULE:
-Direct speech is allowed max 2 instances per script total.
-Use only when the external voice contrasts with internal voice.
-Never use dialogue to advance information.
-Never use dialogue as emotional punctuation.
-
-GOOD dialogue use:
-"You'll get there," she said. The water was flat in my hand.
-
-BAD dialogue use:
-"You're so close," Maya said warmly, touching my arm with genuine care.
-
-DEAD PARAGRAPH RULE:
-At least 1 paragraph per section must contain zero quotable sentences.
-Flat. Transitional. Ugly if necessary.
-Its only job is to exist between two better paragraphs.
-
-GOOD/BAD CONTRAST:
-GOOD: "Same hallway. Same smell. Rent went up again."
-GOOD: "The Civic still starts. That's something."
-GOOD: "Opened the app. Same number. Closed it."
-BAD: "Despite his efforts, nothing changed."
-BAD: "He couldn't help but feel like the system had failed him."
-BAD: "Although he worked hard, life remained difficult."
+ILLUSTRATIVE NUMBER RULE:
+If using transformed numbers from reference material, treat them as illustrative examples only.
+Do not present them as verified data, statistics, or real cases.
+Use framing like "picture this", "take someone earning...", or "imagine two people..."
+Never claim "statistically", "research shows", "data proves", or "the average person" unless a real source was provided.
+If the reference uses a specific numeric example, preserve only the relationship or pressure — not the exact fingerprint.
 `.trim();
 
 
@@ -148,54 +139,54 @@ BAD: "Although he worked hard, life remained difficult."
 
 export function buildVoice(
   characterProse: string,
-  preset: "resigned" | "building" | "raw",
-  previousPreset?: "resigned" | "building" | "raw",
+  preset: "investigative" | "conspiratorial" | "contrarian",
+  previousPreset?: "investigative" | "conspiratorial" | "contrarian",
   intensityShift?: "same" | "deeper" | "lighter"
 ): string {
   const toneMap = {
-    resigned: `Resigned. Mid-thought. Not angry — past angry.
-The character has explained this to himself too many times.
-He's not looking for sympathy. He's just noting things.
-Sentences trail. Nothing lands with force.
-Rhythm: slow, flat, occasional pause mid-sentence.`,
+    investigative: `Investigative. Calm. Methodical.
+The speaker has run the numbers and is showing you what they found.
+Not angry — certain. Not emotional — specific.
+Sentences are complete. Data lands before emotion.
+Rhythm: steady, builds across paragraphs, occasional pause before a key point.
+Never speculates. Only shows.`,
 
-    building: `Building. Not arrived — just getting closer to something uncomfortable.
-The character is still functioning but something is tightening.
-Sentences get shorter as pressure builds. Not dramatic — just tighter.
-One thought interrupts another before it finishes.
-Rhythm: uneven, slightly faster, self-correcting.`,
+    conspiratorial: `Conspiratorial. Close. 1-on-1.
+The speaker is telling you something the mainstream won't say.
+Not a rant — a quiet reveal. Like leaning across a table.
+Short sentences. Direct address — "you", "you've been", "they want you to think".
+Rhythm: intimate, slightly faster, pulls viewer in before revealing.
+The viewer feels like they're being let into something.`,
 
-    raw: `Raw. Started talking before ready.
-The character hasn't organized this yet. It's coming out wrong.
-Details land before context. Logic skips. Circles back.
-Not emotional — just unfiltered. There's a difference.
-Rhythm: fragmented, mid-thought entry, no clean exits.`,
+    contrarian: `Contrarian. Confident. Direct.
+The speaker disagrees with what everyone else is saying — and can prove it.
+Not aggressive — precise. Confidence comes from the data, not the volume.
+Sentences are sharp. Claims are specific. No hedging.
+Rhythm: punchy, declarative, builds to an uncomfortable implication.
+Never apologizes for the claim.`,
   };
 
   const transitionMap: Partial<Record<string, string>> = {
-    "raw→resigned":
-      "Shift from unfiltered to flat. The character ran out of energy to be raw. Now he's just reporting.",
-    "resigned→building":
-      "Shift from flat to tightening. Something specific triggered it — not a feeling, a fact.",
-    "building→raw":
-      "Shift from controlled pressure to breaking containment. Not explosion — just losing grip on the phrasing.",
-    "building→resigned":
-      "Pressure didn't release — it just stopped mattering for a moment.",
-    "raw→building":
-      "From scattered to focused. Something clarified. Not hope — just direction.",
-    "resigned→raw":
-      "From flat reporting to something slipping through. A detail hit differently.",
+    "investigative→conspiratorial":
+      "Shift from showing data to showing what the data implies about who benefits. Same certainty, different intimacy.",
+    "conspiratorial→contrarian":
+      "Shift from revealing to challenging. The viewer now has the information — time to confront what it means.",
+    "contrarian→investigative":
+      "Shift from challenge back to proof. Let the data carry the weight now.",
+    "investigative→contrarian":
+      "Shift from methodical to direct. The evidence is in — state the uncomfortable conclusion.",
+    "conspiratorial→investigative":
+      "Shift from intimate reveal to structured proof. Back up the claim with mechanisms.",
+    "contrarian→conspiratorial":
+      "Shift from direct challenge to quiet reveal. Something even bigger is underneath.",
   };
 
   const intensityMap = {
     same: "",
-    deeper: `INTENSITY: Same preset as previous section — but deeper.
-Do not change the emotional character. Make it heavier within the same frame.
-The character is more tired, more certain of the same thing.
-Do not introduce new emotional colors.`,
-    lighter: `INTENSITY: Same preset as previous section — but lighter.
-Not recovery. Just less pressure momentarily.
-The character hasn't changed — there's just less of it right now.`,
+    deeper: `INTENSITY: Same preset — but closer, more certain.
+Do not change the voice character. Make the claims sharper within the same frame.`,
+    lighter: `INTENSITY: Same preset — but pull back slightly.
+Not less confident. Just more space between the points.`,
   };
 
   const transitionKey = previousPreset ? `${previousPreset}→${preset}` : null;
@@ -210,22 +201,21 @@ The character hasn't changed — there's just less of it right now.`,
       : "";
 
   return `
-VOICE:
+VOICE PRESET: ${preset}
 ${toneMap[preset]}
 ${transitionNote}
 ${intensityNote}
 
-CHARACTER:
+VIEWER CONTEXT:
 ${characterProse}
 
 VOICE CHECK (verify before writing):
-- Does the opening line drop in mid-thought?
-- Is there at least one sentence that cuts off or trails?
-- Does any sentence feel too clean or too complete?
-- Is the ending unresolved — not a conclusion, not a summary?
-- Is there at least one moment of emotional oscillation
-  (denial / humor / bitterness / numbness / absurdity / cope)?
-  It must feel accidental, not placed.
+- Does the first sentence lead with something specific — mechanism, name, or scenario?
+- Is the viewer addressed directly — "you", not "people"?
+- Is there at least 1 sentence sharp enough to screenshot?
+- Does the section contain 1 point a reasonable person could disagree with?
+- Does the ending create tension — not resolve it?
+- Are all claims grounded in input data — nothing fabricated?
 `.trim();
 }
 
@@ -271,6 +261,7 @@ OUTPUT JSON:
 
 // ─────────────────────────────────────────────────────────────
 // HOOK
+// Variables: rawPain, contradiction, falseBelief, openQuestion
 // ─────────────────────────────────────────────────────────────
 
 export const HOOK_PROMPT = `
@@ -282,49 +273,44 @@ ${GLOBAL_SCRIPT_RULES}
 
 {{voice}}
 
-Pain: {{rawPain}}
+Surface pain: {{rawPain}}
 Contradiction: {{contradiction}}
-False belief: {{falseBelief}}
+False belief viewer holds: {{falseBelief}}
 Open question: {{openQuestion}}
 
-Physical anchor: {{physicalDetail}}
-
 TASK:
-Open mid-thought. 1–6 words maximum for the first sentence.
-The first sentence should name a specific action or object — not a feeling.
-Weave Pain, Contradiction, and False belief into the scene — do not list them.
-Insert 1 interruption using the physical anchor.
-Imply something is wrong through behavior and detail. Never state it.
-
-Plant the open question — do not answer it. It should feel like something
-the character almost notices, then moves past. The viewer carries it forward.
+Open with the contradiction — 1 sentence, no setup.
+Do NOT explain it yet. Let it create dissonance.
+Follow with 2–3 sentences that widen the dissonance.
+Use {{falseBelief}} against the contradiction — show why it shouldn't be possible.
+Plant {{openQuestion}} — do not answer it.
+End on the contradiction — unresolved, present, uncomfortable.
 
 RHYTHM:
-Short sentences dominate.
-One longer sentence allowed — place it in the middle, not the end.
-End on something unresolved. Not a question. Not a statement of feeling.
+First sentence: 10 words or fewer.
+Mix short declarative sentences with 1 longer mechanism sentence.
+Never end on a soft note.
 
-WORD COUNT: 180–220 words.
-If you reach 220 words before the section feels done — stop anyway.
-Do not add sentences to complete the feeling. Incompleteness is correct.
+WORD COUNT: 200–250 words.
 
 GOOD opening lines:
-"Can't stop refreshing."
-"Lease renewal's on the counter."
-"Three years. Same carpet."
+"You did everything right. The number still didn't move."
+"Your income went up 18%. Your savings went down."
+"The average first-time buyer is now 38 years old."
 
 BAD opening lines:
-"I've been struggling with this for a while."
-"It's hard to explain, but something feels wrong."
-"Despite everything, I keep trying."
+"Have you ever wondered why buying a house feels so hard?"
+"Today we're going to talk about something important."
+"Everyone knows the market is tough right now."
 `;
 
 
 // ─────────────────────────────────────────────────────────────
-// SETUP
+// CRACK
+// Variables: falseBelief, crackMoment, contradiction
 // ─────────────────────────────────────────────────────────────
 
-export const SETUP_PROMPT = `
+export const CRACK_PROMPT = `
 ${GLOBAL_SCRIPT_RULES}
 
 {{arcContract}}
@@ -335,161 +321,34 @@ ${GLOBAL_SCRIPT_RULES}
 
 Continue from (last 3–5 sentences only): "{{lastLines}}"
 
-Scenario: {{scenario}}
-Loop: {{behaviorLoop}}
-Cost: {{behaviorCost}}
-Constraint: {{constraint}}
-
-Physical anchor: {{physicalDetail}}
-Habit loop: {{habitLoop}}
+False assumption viewer holds: {{falseBelief}}
+The crack — what breaks the assumption: {{crackMoment}}
+Scenario that makes the crack visible: {{contradiction}}
 
 TASK:
-Show the behavior loop in motion — not described, enacted.
-The character does the same thing again. The repetition IS the feeling.
-Include 1 derail: a physical detail interrupts the logic mid-paragraph.
-
-A derail is NOT a transition.
-It is the character's attention snagging on something concrete
-before returning to the main thread.
-The derail detail must be dead — it symbolizes nothing.
-
-DERAIL EXAMPLE:
-"I keep telling myself it makes sense to wait another year.
-The fridge makes that clicking sound again.
-Anyway. Same number in the account."
-
-Cost must land through a specific object or action — not a summary statement.
-Constraint must feel structural, not personal:
-not "I can't afford it" but "the math says 2027 and 2027 keeps moving."
-
-WORD COUNT: 350–450 words.
-If you reach 450 before the section feels done — stop anyway.
-`;
-
-
-// ─────────────────────────────────────────────────────────────
-// CONTRADICTION
-// ─────────────────────────────────────────────────────────────
-
-export const CONTRADICTION_PROMPT = `
-${GLOBAL_SCRIPT_RULES}
-
-{{arcContract}}
-
-{{identityLock}}
-
-{{voice}}
-
-Continue from (last 3–5 sentences only): "{{lastLines}}"
-
-A: {{optionAAction}} → {{optionACost}}
-B: {{optionBAction}} → {{optionBCost}}
-
-Trap: {{noWinAsymmetry}}
-Fear: {{fearIfNotAct}}
-
-Physical anchor: {{physicalDetail}}
-
-TASK:
-Do NOT present A and B as a clean list.
-Build tension first — let the character circle the problem
-before the options become visible.
-
-STRUCTURE (follow this order):
-1. Re-enter from lastLines. One concrete observation. No summary.
-2. Option A surfaces through behavior or memory — not explanation.
-3. The cost of A lands on a physical detail or number.
-4. Self-interruption — character catches himself mid-logic.
-5. Option B surfaces. Shorter treatment than A.
-6. The trap becomes visible — but is NOT named or concluded.
-7. One uncomfortable truth line — not the ending line, placed in the middle.
-8. End mid-thought. The fear is present but not stated.
-
-SELF-INTERRUPTION EXAMPLE:
-"I could do 5% down. Some people do that.
-But then my dad's voice — the PMI thing —
-forget it. Doesn't matter."
-
-The uncomfortable truth must feel accidentally said, not placed for effect.
-
-OSCILLATION REQUIREMENT:
-Somewhere in this section, the emotional register must shift once —
-briefly, without announcement.
-Options: a moment of dark humor / a flat cope / a beat of absurdity /
-a line that almost sounds like acceptance before collapsing.
-It should feel like it slipped through, not like it was written.
-
-WORD COUNT: 450–600 words.
-If you reach 600 before the section feels done — stop anyway.
-`;
-
-
-// ─────────────────────────────────────────────────────────────
-// REFRAME
-// ─────────────────────────────────────────────────────────────
-
-export const REFRAME_PROMPT = `
-${GLOBAL_SCRIPT_RULES}
-
-{{arcContract}}
-
-{{identityLock}}
-
-{{voice}}
-
-Continue from (last 3–5 sentences only): "{{lastLines}}"
-
-Belief: {{falseBelief}}
-Crack: {{crackMoment}}
-Truth: {{hiddenTruth}}
-Glimpse: {{aspirationalGlimpse}}
-
-Physical anchor: {{physicalDetail}}
-
-TASK:
-A reframe is NOT a revelation. It is a crack — small, uncomfortable,
-not fully formed. The character does not conclude anything.
-He notices something he can't un-notice.
+Show why {{falseBelief}} is wrong — not by arguing, by showing.
+Use {{crackMoment}} as the moment the assumption breaks.
+Use {{contradiction}} to make it concrete and visible.
+Do not explain the full mechanism yet. Just show the seam.
+Address the viewer directly throughout.
 
 STRUCTURE:
-1. Re-enter from lastLines. Flat. Observational.
-2. The false belief is visible in a behavior — not stated as a belief.
-3. The crack appears through a specific moment or detail — {{crackMoment}}.
-   It is NOT explained. It is just shown.
-4. Both sides of the crack exist at the same time.
-   The character does not choose between them.
-5. The hidden truth {{hiddenTruth}} is present — but only partially visible.
-   A fragment. Not a conclusion.
-6. The glimpse {{aspirationalGlimpse}} surfaces briefly — one specific action
-   or decision that became possible for someone else. Not motivational.
-   Just visible. Then gone.
-7. End on something smaller than what came before.
-   Not a quiet insight. Just a smaller, flatter observation.
+1. Re-enter from lastLines. One sentence. No summary.
+2. State {{falseBelief}} as the viewer holds it.
+3. Show the crack using {{crackMoment}} and {{contradiction}}.
+4. One sentence that names what this implies — but does not finish the thought.
+5. End before the conclusion arrives.
 
-CRACK EXAMPLE (rhythm reference only — do not copy):
-"My dad bought at 24. I'm 31.
-I looked it up once — adjusted for inflation, I make more than he did.
-The math doesn't work the same way it used to work.
-I don't know what that means.
-The spreadsheet's still open."
-
-Show both sides. No resolution. No summary. No lesson.
-
-OSCILLATION REQUIREMENT:
-One beat in this section must shift register briefly —
-something that almost sounds like relief, or humor, or acceptance —
-before returning to flat. It should feel accidental.
-
-WORD COUNT: 260–340 words.
-If you reach 340 before the section feels done — stop anyway.
+WORD COUNT: 250–320 words.
 `;
 
 
 // ─────────────────────────────────────────────────────────────
-// SOLUTION
+// EXPOSE
+// Variables: villainEntity, villainMechanism, behaviorLoop, peakImplication
 // ─────────────────────────────────────────────────────────────
 
-export const SOLUTION_PROMPT = `
+export const EXPOSE_PROMPT = `
 ${GLOBAL_SCRIPT_RULES}
 
 {{arcContract}}
@@ -500,52 +359,121 @@ ${GLOBAL_SCRIPT_RULES}
 
 Continue from (last 3–5 sentences only): "{{lastLines}}"
 
-Need: {{unspokenNeed}}
-Loop: {{behaviorLoop}}
-Glimpse: {{aspirationalGlimpse}}
-
-Physical anchor: {{physicalDetail}}
+Villain mechanism name: {{villainEntity}}
+How it operates: {{villainMechanism}}
+Behavioral proof: {{behaviorLoop}}
+Most uncomfortable implication: {{peakImplication}}
 
 TASK:
-This section does NOT solve the problem.
-It shows the character considering 2–3 imperfect options
-with low confidence and no real follow-through.
+Name {{villainEntity}} — 1 sentence, no hedging.
+Show how {{villainMechanism}} operates on the viewer — step by step.
+Use {{behaviorLoop}} as proof the mechanism is real — show it through behavior pattern.
+Land {{peakImplication}} — the most uncomfortable consequence.
+Do not soften the ending.
 
-Each option must be:
-- Named hesitantly ("there's this thing I read about", "someone mentioned")
-- Framed with visible doubt ("I don't know if that's", "probably doesn't apply")
-- Followed by the specific reason the character won't actually do it
+STRUCTURE:
+1. Name the mechanism — 1 sentence.
+2. Show how it operates — 3–4 sentences.
+3. Show who benefits from the viewer not knowing this.
+4. Land {{peakImplication}}.
+5. Do not resolve.
 
-The avoidance must feel behavioral — rooted in habit or fear, not in logic.
+NO FABRICATION:
+Use only what is in the input variables.
+Do not generate statistics or mechanisms not present above.
 
-OPTION PRESENTATION EXAMPLE:
-"There's a sub I check sometimes. Someone always says move somewhere cheaper.
-I've thought about it. The way you think about faking your death.
-Technically possible. Requires abandoning everything."
+WORD COUNT: 380–480 words.
+`;
 
-The glimpse {{aspirationalGlimpse}} must appear once — briefly, flat,
-as something the character heard about someone else. Not as inspiration.
-Just as information that didn't land.
 
-The unspoken need {{unspokenNeed}} must be visible through
-what the character gravitates toward — not through what he says he needs.
+// ─────────────────────────────────────────────────────────────
+// VALIDATE
+// Variables: structuralProof, structuralGap, validationLine
+// ─────────────────────────────────────────────────────────────
 
-End on the loop reasserting itself.
-The character returns to the same behavior he started with.
-No new information. Same place.
+export const VALIDATE_PROMPT = `
+${GLOBAL_SCRIPT_RULES}
 
-ENERGY NOTE:
-This section has the lowest energy in the script.
-If a sentence feels significant or memorable — flatten it or cut it.
-Options should feel like things the character is barely bothering to consider.
+{{arcContract}}
 
-WORD COUNT: 320–420 words.
-If you reach 420 before the section feels done — stop anyway.
+{{identityLock}}
+
+{{voice}}
+
+Continue from (last 3–5 sentences only): "{{lastLines}}"
+
+Structural proof: {{structuralProof}}
+Structural gap — the no-win loop: {{structuralGap}}
+Validation line: {{validationLine}}
+
+TASK:
+Release shame — but only through proof, not reassurance.
+Show {{structuralProof}} first — evidence this is structural, not personal.
+Show {{structuralGap}} — the specific loop that proves the system is misaligned.
+Deliver {{validationLine}} as validation — must be specific enough to screenshot.
+
+STRUCTURE:
+1. Re-enter from lastLines. One flat observation.
+2. Show {{structuralProof}} — structural, not personal.
+3. Show {{structuralGap}} — the no-win loop viewer is trapped in.
+4. Deliver {{validationLine}}.
+   BAD: "This isn't your fault."
+   GOOD: "This loop was designed before you walked in."
+5. End on the implication — not the emotion.
+
+SCREENSHOT TEST:
+Before finalizing — identify the 1 sentence a viewer would screenshot.
+If none exists — rewrite until one does.
+
+WORD COUNT: 250–320 words.
+`;
+
+
+// ─────────────────────────────────────────────────────────────
+// FRAMEWORK
+// Variables: reframeLens, concreteAction, openEdge
+// ─────────────────────────────────────────────────────────────
+
+export const FRAMEWORK_PROMPT = `
+${GLOBAL_SCRIPT_RULES}
+
+{{arcContract}}
+
+{{identityLock}}
+
+{{voice}}
+
+Continue from (last 3–5 sentences only): "{{lastLines}}"
+
+New lens: {{reframeLens}}
+Concrete action this lens makes possible: {{concreteAction}}
+What the framework does NOT solve: {{openEdge}}
+
+TASK:
+Give the viewer a new way of seeing the problem — not a solution.
+{{reframeLens}} must be specific enough to apply to their situation today.
+Show {{concreteAction}} — one decision that becomes possible with this lens.
+Acknowledge {{openEdge}} — what this framework still does not answer.
+End on the open edge — not on resolution.
+
+STRUCTURE:
+1. State the old lens — what they were optimizing for before.
+2. State {{reframeLens}} — what to optimize for instead.
+3. Show {{concreteAction}} — specific, actionable.
+4. Acknowledge {{openEdge}}.
+5. End open.
+
+FRAMEWORK RULE:
+The framework must generate a different decision than the old lens.
+If the advice is the same either way — the reframe has no teeth.
+
+WORD COUNT: 300–420 words.
 `;
 
 
 // ─────────────────────────────────────────────────────────────
 // CLOSE
+// Variables: debateQuestion, sideA, sideB, coreTruth
 // ─────────────────────────────────────────────────────────────
 
 export const CLOSE_PROMPT = `
@@ -559,169 +487,104 @@ ${GLOBAL_SCRIPT_RULES}
 
 Continue from (last 3–5 sentences only): "{{lastLines}}"
 
-Core: {{coreTruth}}
-Belief: {{coreBelief}}
-Echo: {{almostMoment}}
-
-Physical anchor: {{physicalDetail}}
+Debate question: {{debateQuestion}}
+Side A: {{sideA}}
+Side B: {{sideB}}
+Core truth: {{coreTruth}}
 
 TASK:
-No new idea. No new character. No new location.
-Return to something already present in the script —
-the physical anchor, a number, a routine already mentioned.
-
-Echo {{almostMoment}} — not as callback, not as symmetry.
-Just as something that resurfaces. The character didn't plan to return to it.
-
-The close should feel like the script running out of energy —
-not ending, just stopping.
+Do not summarize. Do not conclude.
+End on {{debateQuestion}} — a question that forces the viewer to pick a side.
 
 STRUCTURE:
-1. One flat observation. Smaller than anything before it.
-2. A moment where {{coreTruth}} is almost visible — then isn't.
-3. The physical anchor appears one last time.
-   Not for effect. Just because it's still there.
-4. Final sentence: the weakest sentence in the script.
-   Low energy. Unresolved. Could be mid-thought.
-   Does not summarize. Does not land.
+1. One sentence that reframes the entire video — not a summary.
+2. State {{coreTruth}} — the one thing this video existed to prove.
+3. Name {{sideA}} and {{sideB}} — let viewer self-select.
+4. Final sentence must be {{debateQuestion}} or a forced-choice version of it.
 
-FINAL SENTENCE TEST:
-Read the last sentence. If it sounds like an ending — rewrite it.
-It should sound like something said while looking at something else.
+DEBATE QUESTION RULES:
+- Final sentence must be the debate question or a forced-choice version of it.
+- Do not add any sentence after the debate question.
+- Answerable with a clear position.
+- Defensible answer on both sides.
+- Specific to this video's topic — not generic.
 
-GOOD closing energy:
-"The chicken's probably fine."
-"Same number. Closed the app."
-"Still starts. That's something."
+GOOD:
+"So the question isn't whether you can afford it. It's whether the game is still worth playing."
 
-BAD closing energy:
-"And maybe that's enough for now."
-"He didn't have the answers, but he kept going."
-"Some things just take time."
+BAD:
+"What do you think? Let me know in the comments."
 
-WORD COUNT: 150–200 words.
-If you reach 200 before the section feels done — stop anyway.
+WORD COUNT: 180–240 words.
 `;
 
 
 // ─────────────────────────────────────────────────────────────
-// ORDER
+// SECTION ORDER
 // ─────────────────────────────────────────────────────────────
 
 export const SECTION_ORDER = [
   "hook",
-  "setup",
-  "contradiction",
-  "reframe",
-  "solution",
+  "crack",
+  "expose",
+  "validate",
+  "framework",
   "close",
 ] as const;
+
+export type SectionKey = typeof SECTION_ORDER[number];
+
 
 // ─────────────────────────────────────────────────────────────
 // SAFE STRING
 // ─────────────────────────────────────────────────────────────
 
 function safe(value: unknown, fallback = ""): string {
-  if (value === undefined || value === null) {
-    return fallback;
-  }
-
+  if (value === undefined || value === null) return fallback;
   const str = String(value).trim();
-
   return str || fallback;
 }
 
 
 // ─────────────────────────────────────────────────────────────
 // RENDER SCRIPT PROMPT
+// BUG FIX: guard against undefined template
+// fallbackMap: empty strings only — no fabricated data
 // ─────────────────────────────────────────────────────────────
 
 export function renderScriptPrompt(
   template: string,
   values: Record<string, any>
 ): string {
+  // GUARD: prevent replaceAll crash on undefined template
+  if (!template || typeof template !== "string") {
+    console.error("[renderScriptPrompt] Template is undefined or not a string.");
+    return "";
+  }
+
   let output = template;
 
   const normalized: Record<string, string> = {};
-
   for (const key in values) {
     normalized[key] = safe(values[key]);
   }
-
   for (const key in normalized) {
-    output = output.replaceAll(
-      `{{${key}}}`,
-      normalized[key]
-    );
+    output = output.replaceAll(`{{${key}}}`, normalized[key]);
   }
 
   output = output.replace(
     /\{\{([^}]+)\}\}/g,
     (_, rawKey) => {
       const key = rawKey.trim();
-
-      console.warn(
-        `[renderScriptPrompt] Auto-filled unresolved variable: {{${key}}}`
-      );
-
-      const fallbackMap: Record<string, string> = {
-        voice:
-          `
-VOICE:
-Flat. Mid-thought. Low energy.
-Sentences drift slightly.
-Nothing resolves cleanly.
-`.trim(),
-
-        lastLines:
-          "Continue naturally from the previous emotional beat.",
-
-        scriptMemory:
-          "Something about the situation keeps repeating.",
-
-        physicalDetail:
-          "The room is quiet except for appliance noise.",
-
-        habitLoop:
-          "Checks something. Stops. Comes back later.",
-
-        almostMoment:
-          "For a second it almost felt different.",
-
-        contradiction:
-          "Something about the situation doesn't add up.",
-
-        falseBelief:
-          "Working harder should eventually fix it.",
-
-        hiddenTruth:
-          "Maybe the system changed before he noticed.",
-
-        coreTruth:
-          "The pressure never fully leaves.",
-
-        coreBelief:
-          "Hard work is supposed to lead somewhere.",
-
-        openQuestion:
-          "Something about this doesn't add up but the character can't name it yet.",
-
-        aspirationalGlimpse:
-          "Someone nearby made a decision that didn't require a spreadsheet.",
-      };
-
-      return fallbackMap[key] || "";
+      console.warn(`[renderScriptPrompt] Unresolved variable: {{${key}}}`);
+      // No fabricated fallbacks — empty string forces AI to work with what it has
+      return "";
     }
   );
 
   const remaining = output.match(/\{\{[^}]+\}\}/g);
-
   if (remaining?.length) {
-    console.warn(
-      `[renderScriptPrompt] Remaining unresolved variables: ${remaining.join(
-        ", "
-      )}`
-    );
+    console.warn(`[renderScriptPrompt] Remaining unresolved: ${remaining.join(", ")}`);
   }
 
   return output;
@@ -732,11 +595,11 @@ Nothing resolves cleanly.
 // SECTION MAP
 // ─────────────────────────────────────────────────────────────
 
-export const SECTION_PROMPTS = {
+export const SECTION_PROMPTS: Record<SectionKey, string> = {
   hook: HOOK_PROMPT,
-  setup: SETUP_PROMPT,
-  contradiction: CONTRADICTION_PROMPT,
-  reframe: REFRAME_PROMPT,
-  solution: SOLUTION_PROMPT,
+  crack: CRACK_PROMPT,
+  expose: EXPOSE_PROMPT,
+  validate: VALIDATE_PROMPT,
+  framework: FRAMEWORK_PROMPT,
   close: CLOSE_PROMPT,
-} as const;
+};

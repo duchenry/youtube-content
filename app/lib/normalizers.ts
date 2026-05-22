@@ -36,6 +36,7 @@ const INSUFFICIENT = "Insufficient data — need more comments";
 
 // ─────────────────────────────────────────────
 // STEP 1: EXTRACT
+// Schema ref: EXTRACTION_PROMPT
 // ─────────────────────────────────────────────
 
 export function normalizeExtraction(
@@ -51,8 +52,11 @@ export function normalizeExtraction(
   const rd = asRecord(att.retentionDriver);
   const aud = asRecord(source.audience);
   const ci = asRecord(aud.commentInsight);
+  const er = asRecord(aud.emotionalRegister);
   const pri = asRecord(source.priority);
   const vp = asRecord(source.viewerProfile);
+  const cp = asRecord(source.competitorPosition);
+  const wp = asRecord(source.weakPoints);
 
   const tooFew = (comments?.length || 0) < 5;
 
@@ -83,6 +87,12 @@ export function normalizeExtraction(
       },
     },
 
+    // NEW: competitorPosition (EXTRACTION_PROMPT schema)
+    competitorPosition: {
+      stanceInStory: asString(cp.stanceInStory) as any,
+      voiceType: asString(cp.voiceType) as any,
+    },
+
     audience: {
       profile: asString(aud.profile),
 
@@ -96,11 +106,23 @@ export function normalizeExtraction(
           })
         : [],
 
+      // NEW: emotionalRegister (EXTRACTION_PROMPT schema)
+      emotionalRegister: {
+        dominant: asString(er.dominant) as any,
+        evidence: asString(er.evidence),
+      },
+
       commentInsight: {
         repeatedPain: tooFew ? INSUFFICIENT : asString(ci.repeatedPain),
         emotionalExample: tooFew ? INSUFFICIENT : asString(ci.emotionalExample),
         unspokenNeed: tooFew ? INSUFFICIENT : asString(ci.unspokenNeed),
       },
+    },
+
+    // NEW: weakPoints (EXTRACTION_PROMPT schema)
+    weakPoints: {
+      whereItLosesAttention: asString(wp.whereItLosesAttention),
+      why: asString(wp.why),
     },
 
     priority: {
@@ -113,6 +135,9 @@ export function normalizeExtraction(
       incomeOrSituation: asString(vp.incomeOrSituation),
       coreBelief: asString(vp.coreBelief),
       recentPainTrigger: asString(vp.recentPainTrigger),
+      // NEW: whatTheyAlreadyTried + aspirationalAnchor (EXTRACTION_PROMPT schema)
+      whatTheyAlreadyTried: asString(vp.whatTheyAlreadyTried),
+      aspirationalAnchor: asString(vp.aspirationalAnchor),
     },
 
     inputComments: comments || [],
@@ -121,30 +146,38 @@ export function normalizeExtraction(
 
 // ─────────────────────────────────────────────
 // STEP 2: RESEARCH
+// Schema ref: RESEARCH_PROMPT
 // ─────────────────────────────────────────────
 
-export function normalizeResearch(raw: any): ResearchDirective {
-  const pc = raw?.primaryContradiction ?? {};
+export function normalizeResearch(raw: JsonRecord): ResearchDirective {
+  const r = asRecord(raw);
+  const pc = asRecord(r.primaryContradiction);
+  const rk = asRecord(r.ranking);
 
   return {
     primaryContradiction: {
-      type: pc.type || "",
-      description: pc.description || "",
-      searchInstinct: pc.searchInstinct || "",
-      whyItMatters: pc.whyItMatters || "",
+      type: asString(pc.type) as ResearchDirective["primaryContradiction"]["type"],
+      description: asString(pc.description),
+      searchInstinct: asString(pc.searchInstinct),
+      whyItMatters: asString(pc.whyItMatters),
     },
 
-    searchInstincts: raw?.searchInstincts || [],
-    painSignals: raw?.painSignals || [],
+    searchInstincts: Array.isArray(r.searchInstincts)
+      ? r.searchInstincts.map((i) => asString(i))
+      : [],
 
-    ranking: raw?.ranking || {
-      top1: "",
-      top2: "",
-      top3: "",
-      reason: "",
+    painSignals: Array.isArray(r.painSignals)
+      ? r.painSignals.map((i) => asString(i))
+      : [],
+
+    ranking: {
+      top1: asString(rk.top1),
+      top2: asString(rk.top2),
+      top3: asString(rk.top3),
+      reason: asString(rk.reason),
     },
 
-    confidence: raw?.confidence || "low",
+    confidence: asConfidence(r.confidence),
   };
 }
 
@@ -157,8 +190,11 @@ export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
 
   const fp = asRecord(r.focusPriority);
   const ce = asRecord(r.coreEngine);
+  const ceVillain = asRecord(ce.villain);
   const pain = asRecord(r.pain);
   const bs = asRecord(r.beliefShift);
+  const pos = asRecord(r.positioning);
+  const ft = asRecord(r.forwardTension);
   const exec = asRecord(r.execution);
   const ac = asRecord(r.authorControl);
   const rk = asRecord(r.ranking);
@@ -174,6 +210,10 @@ export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
       behaviorLoop: asString(ce.behaviorLoop),
       identityPressure: asString(ce.identityPressure),
       noWinLoop: asString(ce.noWinLoop),
+      villain: {
+        entity: asString(ceVillain.entity),
+        howItOperates: asString(ceVillain.howItOperates),
+      },
     },
 
     pain: {
@@ -199,6 +239,18 @@ export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
         })
       : [],
 
+    positioning: {
+      competitorStance: asString(pos.competitorStance),
+      yourStance: asString(pos.yourStance) as any,
+      voicePreset: asString(pos.voicePreset) as any,
+    },
+
+    forwardTension: {
+      openQuestion: asString(ft.openQuestion),
+      aspirationalGlimpse: asString(ft.aspirationalGlimpse),
+      watchReason: asString(ft.watchReason),
+    },
+
     execution: {
       hook: asString(exec.hook),
       mid: asString(exec.mid),
@@ -216,6 +268,9 @@ export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
       top2: asString(rk.top2),
       top3: asString(rk.top3),
       reason: asString(rk.reason),
+      signals: Array.isArray(rk.signals)
+        ? rk.signals.map((s: any) => asString(s))
+        : undefined,
     },
 
     physicalDetail: Array.isArray(r.physicalDetail)
@@ -247,12 +302,13 @@ export function normalizeScript(raw: JsonRecord): GeneratedScript {
     status: r.status === "FINAL" ? "FINAL" : "DRAFT",
     fullScript: asString(r.fullScript),
 
+    // FIX: keys align với SectionKey (hook|crack|expose|validate|framework|close)
     sections: {
       hook: get("hook"),
-      setup: get("setup"),
-      contradiction: get("contradiction"),
-      reframe: get("reframe"),
-      solution: get("solution"),
+      crack: get("crack"),
+      expose: get("expose"),
+      validate: get("validate"),
+      framework: get("framework"),
       close: get("close"),
     },
   };

@@ -8,7 +8,9 @@ import type {
   ResearchDirective,
   StrategicSynthesis,
   GeneratedScript,
+  EvaluationMap,
 } from "@/app/lib/types";
+
 import { normalizeExtraction } from "./normalizers";
 
 /* ─────────────────────────────
@@ -21,8 +23,22 @@ const safeObj = (v: any) =>
 const safeStr = (v: any) =>
   typeof v === "string" ? v : typeof v === "number" ? String(v) : "";
 
-const safeArr = (v: any) =>
-  Array.isArray(v) ? v : [];
+const safeArr = <T = any,>(v: any): T[] => (Array.isArray(v) ? v : []);
+
+const commentsToArray = (comments: any): string[] => {
+  if (Array.isArray(comments)) {
+    return comments.map(safeStr).filter(Boolean);
+  }
+
+  if (typeof comments === "string") {
+    return comments
+      .split("\n")
+      .map((c) => c.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
 
 /* ───────────────────────────── */
 
@@ -38,6 +54,8 @@ export interface HistoryEntry {
   synthesis: StrategicSynthesis | null;
   generated_script: GeneratedScript | null;
 
+  evaluations: EvaluationMap | null;
+
   reddit_raw: string | null;
 
   title: string | null;
@@ -45,68 +63,35 @@ export interface HistoryEntry {
 }
 
 /* ─────────────────────────────
-   NORMALIZER (DB SAFE)
+   NORMALIZER FOR OLD + NEW DB SHAPES
 ───────────────────────────── */
 
-function normalizeResult(raw: any): AnalysisResult {
-  const r = safeObj(raw);
+function normalizeStoredResult(item: any): AnalysisResult {
+  const storedResult = safeObj(item?.result);
 
-  return {
-    hook: {
-      raw: safeStr(r?.hook?.raw),
-      type: r?.hook?.type ?? "Question",
-      mechanism: safeStr(r?.hook?.mechanism),
-      confidence: r?.hook?.confidence ?? "low",
-    },
+  /**
+   * Supports both shapes:
+   *
+   * OLD:
+   * result: {
+   *   extraction: {...}
+   * }
+   *
+   * NEW:
+   * result: {...}
+   */
+  const extractionCandidate = safeObj(storedResult?.extraction);
+  const extraction =
+    Object.keys(extractionCandidate).length > 0
+      ? extractionCandidate
+      : storedResult;
 
-    angle: {
-      claim: safeStr(r?.angle?.claim),
-      hiddenAssumption: safeStr(r?.angle?.hiddenAssumption),
-      confidence: r?.angle?.confidence ?? "low",
-    },
+  const inputComments =
+    safeArr<string>(extraction?.inputComments).length > 0
+      ? safeArr<string>(extraction?.inputComments)
+      : commentsToArray(item?.comments);
 
-    coreTruth: {
-      insight: safeStr(r?.coreTruth?.insight),
-      triggerMoment: safeStr(r?.coreTruth?.triggerMoment),
-      confidence: r?.coreTruth?.confidence ?? "low",
-    },
-
-    attention: {
-      retentionDriver: {
-        description: safeStr(r?.attention?.retentionDriver?.description),
-        confidence: r?.attention?.retentionDriver?.confidence ?? "low",
-      },
-    },
-
-    audience: {
-      profile: safeStr(r?.audience?.profile),
-
-      painMap: safeArr(r?.audience?.painMap).map((p: any) => ({
-        pain: safeStr(p?.pain),
-        realScenario: safeStr(p?.realScenario),
-      })),
-
-      commentInsight: {
-        repeatedPain: safeStr(r?.audience?.commentInsight?.repeatedPain),
-        emotionalExample: safeStr(r?.audience?.commentInsight?.emotionalExample),
-        unspokenNeed: safeStr(r?.audience?.commentInsight?.unspokenNeed),
-      },
-    },
-
-    priority: {
-      primaryDriver: safeStr(r?.priority?.primaryDriver),
-      why: safeStr(r?.priority?.why),
-    },
-
-    viewerProfile: {
-      ageRange: safeStr(r?.viewerProfile?.ageRange),
-      incomeOrSituation: safeStr(r?.viewerProfile?.incomeOrSituation),
-      coreBelief: safeStr(r?.viewerProfile?.coreBelief),
-      recentPainTrigger: safeStr(r?.viewerProfile?.recentPainTrigger),
-    },
-
-    inputComments: safeArr(r?.inputComments),
-  };
+  return normalizeExtraction(extraction, inputComments);
 }
 
 /* ───────────────────────────── */
@@ -133,13 +118,26 @@ export function useHistory() {
       if (!data) return;
 
       const mapped: HistoryEntry[] = data.map((item: any) => ({
-        ...item,
-        result: normalizeExtraction(item?.result?.extraction, item?.result?.extraction?.inputComments),
-        
+        id: safeStr(item?.id),
+        created_at: safeStr(item?.created_at),
+
+        script_preview:
+          safeStr(item?.script_preview) || safeStr(item?.script).slice(0, 200),
+
+        comments: Array.isArray(item?.comments)
+          ? item.comments.join("\n")
+          : item?.comments ?? null,
+
+        result: normalizeStoredResult(item),
+
         research: item?.research ?? null,
         synthesis: item?.synthesis ?? null,
         generated_script: item?.generated_script ?? null,
+
+        evaluations: item?.evaluations ?? null,
+
         reddit_raw: item?.reddit_raw ?? null,
+
         title: item?.title ?? null,
         slug: item?.slug ?? null,
       }));
@@ -156,19 +154,27 @@ export function useHistory() {
     fetchHistory();
   }, [fetchHistory]);
 
-    const saveAnalysis = async (
+  const saveAnalysis = async (
     script: string,
     comments: string[],
     result: AnalysisResult
   ) => {
+    const normalizedResult: AnalysisResult = {
+      ...result,
+      inputComments:
+        Array.isArray(result.inputComments) && result.inputComments.length > 0
+          ? result.inputComments
+          : comments,
+    };
+
     const { data, error } = await supabase
       .from("analyses")
       .insert({
         script_preview: script.slice(0, 200),
         comments: comments.join("\n"),
-        result,
+        result: normalizedResult,
       })
-      .select()
+      .select("id")
       .single();
 
     if (error) {
@@ -176,7 +182,7 @@ export function useHistory() {
       return null;
     }
 
-    await fetchHistory(); // refresh list
+    await fetchHistory();
     return data?.id ?? null;
   };
 
@@ -195,10 +201,7 @@ export function useHistory() {
   };
 
   const deleteAnalysis = async (id: string) => {
-    const { error } = await supabase
-      .from("analyses")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("analyses").delete().eq("id", id);
 
     if (error) {
       console.error("[deleteAnalysis] ERROR:", error);
@@ -212,7 +215,8 @@ export function useHistory() {
     history,
     loading,
     fetchHistory,
-    saveAnalysis, 
-    deleteAnalysis
+    saveAnalysis,
+    updateAnalysis,
+    deleteAnalysis,
   };
 }

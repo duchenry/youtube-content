@@ -4,7 +4,6 @@
  * ─────────────────────────────────────────
  */
 
-
 /* ─────────────────────────────
    SHARED BASIC TYPES
 ───────────────────────────── */
@@ -13,18 +12,18 @@ export type Confidence = "high" | "medium" | "low";
 
 export type SectionKey =
   | "hook"
-  | "setup"
-  | "contradiction"
-  | "reframe"
-  | "solution"
+  | "crack"
+  | "expose"
+  | "validate"
+  | "framework"
   | "close";
 
 export const SECTION_KEYS: SectionKey[] = [
   "hook",
-  "setup",
-  "contradiction",
-  "reframe",
-  "solution",
+  "crack",
+  "expose",
+  "validate",
+  "framework",
   "close",
 ];
 
@@ -35,7 +34,7 @@ export const SECTION_KEYS: SectionKey[] = [
 export interface AnalysisResult {
   hook: {
     raw: string;
-    type: "Curiosity" | "Pain" | "Question" | "Story";
+    type: "curiosity" | "fear" | "story" | "identity" | "authority";
     mechanism: string;
     confidence: Confidence;
   };
@@ -59,17 +58,44 @@ export interface AnalysisResult {
     };
   };
 
+  competitorPosition: {
+    stanceInStory:
+      | "before_problem"
+      | "explain_mechanism"
+      | "inside_feeling"
+      | "after_advice";
+    voiceType:
+      | "authority"
+      | "validator"
+      | "investigator"
+      | "contrarian";
+  };
+
   audience: {
     profile: string;
     painMap: Array<{
       pain: string;
       realScenario: string;
     }>;
+    emotionalRegister: {
+      dominant:
+        | "anger"
+        | "shame"
+        | "resignation"
+        | "confusion"
+        | "hope";
+      evidence: string;
+    };
     commentInsight: {
       repeatedPain: string;
       emotionalExample: string;
       unspokenNeed: string;
     };
+  };
+
+  weakPoints: {
+    whereItLosesAttention: string;
+    why: string;
   };
 
   priority: {
@@ -82,13 +108,15 @@ export interface AnalysisResult {
     incomeOrSituation: string;
     coreBelief: string;
     recentPainTrigger: string;
+    whatTheyAlreadyTried: string;
+    aspirationalAnchor: string;
   };
 
   inputComments: string[];
 }
 
 /* ─────────────────────────────
-   STEP 2 - RESEARCH (CLEAN ONLY)
+   STEP 2 - RESEARCH
 ───────────────────────────── */
 
 export interface ResearchDirective {
@@ -97,6 +125,7 @@ export interface ResearchDirective {
       | "know_vs_do"
       | "belief_collapse"
       | "identity_pressure"
+      | "forced_tradeoff"
       | "no_win_loop";
 
     description: string;
@@ -123,12 +152,7 @@ export interface ResearchDirective {
 
 export interface StrategicSynthesis {
   focusPriority: {
-    primary:
-      | "contradiction"
-      | "behavior"
-      | "identity"
-      | "no_win";
-
+    primary: "contradiction" | "behavior" | "identity" | "no_win";
     reason: string;
   };
 
@@ -137,6 +161,10 @@ export interface StrategicSynthesis {
     behaviorLoop: string;
     identityPressure: string;
     noWinLoop: string;
+    villain: {
+      entity: string;
+      howItOperates: string;
+    };
   };
 
   pain: {
@@ -157,6 +185,18 @@ export interface StrategicSynthesis {
     use: "hook" | "mid" | "proof";
   }>;
 
+  positioning: {
+    competitorStance: string;
+    yourStance: "before_problem" | "inside_feeling" | "after_advice";
+    voicePreset: "investigative" | "conspiratorial" | "contrarian";
+  };
+
+  forwardTension: {
+    openQuestion: string;
+    aspirationalGlimpse: string;
+    watchReason: string;
+  };
+
   execution: {
     hook: string;
     mid: string;
@@ -174,14 +214,16 @@ export interface StrategicSynthesis {
     top2: string;
     top3: string;
     reason: string;
+    signals?: string[];
   };
-  physicalDetail: string[];
 
   confidenceNotes: string;
+
+  physicalDetail?: string[];
 }
 
 /* ─────────────────────────────
-   STEP 4 - SCRIPT (CRITICAL FIX)
+   STEP 4 - SCRIPT
 ───────────────────────────── */
 
 export interface ScriptSection {
@@ -200,11 +242,26 @@ export interface GeneratedScript {
 }
 
 /* ─────────────────────────────
-   EVALUATION SYSTEM (FIXED CORE)
+   EVALUATION SYSTEM
 ───────────────────────────── */
 
 export type ImpactLevel = "low" | "medium" | "high";
 
+export type EvaluationEditType = "line_edit" | "structure_edit";
+
+export type StructuralAction = "move" | "cut";
+
+export type StructuralPlacement = {
+  move: "before" | "after";
+  anchorQuote: string;
+  reason: string;
+  bridgeSuggestion?: string;
+};
+
+/**
+ * Deprecated in the new 2-API pipeline.
+ * Kept only to avoid breaking older imports/routes.
+ */
 export type RewriteHint = {
   rhythm: "short" | "broken" | "trailing" | "heavy";
   action: string;
@@ -220,31 +277,54 @@ export type RewriteOption = {
 };
 
 export type EvaluationEdit = {
+  /**
+   * line_edit:
+   * - can receive rewriteOptions from API 2
+   *
+   * structure_edit:
+   * - action "move" should include placement
+   * - action "cut" should NOT include placement
+   * - should NOT receive rewriteOptions
+   */
+  type?: EvaluationEditType;
+
+  /**
+   * Only for structure_edit.
+   * move = block belongs in CURRENT but is in the wrong position.
+   * cut = block belongs to NEXT or should be removed from CURRENT.
+   */
+  action?: StructuralAction;
+
   quote: string;
   issue: string;
   impactLevel: ImpactLevel;
   suggestion: string;
 
-  rewriteHint: RewriteHint;
+  /**
+   * Only for structure_edit with action "move".
+   */
+  placement?: StructuralPlacement;
+
+  /**
+   * Only for line_edit after API 2 enrichment.
+   */
   rewriteOptions?: RewriteOption[];
+
+  /**
+   * Deprecated.
+   * Do not rely on this in UI.
+   */
+  rewriteHint?: RewriteHint;
 };
 
-/**
- * ✅ FIX CRITICAL:
- * - NOT array wrapper anymore
- * - DIRECT AI STRUCTURE MATCH
- */
 export type SectionEvaluation = {
+  verdict?: string;
+  mainProblem?: string;
+  highestROIEdit?: string;
   edits: EvaluationEdit[];
 };
 
-/**
- * SAFE FOR SUPABASE JSONB
- */
-export type EvaluationMap = Record<
-  SectionKey,
-  SectionEvaluation | null
->;
+export type EvaluationMap = Partial<Record<SectionKey, SectionEvaluation>>;
 
 /* ─────────────────────────────
    API TYPES
@@ -256,39 +336,48 @@ export type EvaluateSectionRequest = {
   previous: string;
   next: string;
   context?: any;
+  scriptEvaluation?: ScriptEvaluateResult | null;
 };
 
 export type EvaluateSectionResponse = {
-  result: SectionEvaluation;
+  result: {
+    verdict?: string;
+    mainProblem?: string;
+    highestROIEdit?: string;
+    edits: EvaluationEdit[];
+  };
 };
 
+export type GenerateRewriteOptionsRequest = {
+  section: SectionKey;
+  text: string;
+  previous: string;
+  edits: Array<{
+    type?: "line_edit";
+    quote: string;
+    issue: string;
+    impactLevel: ImpactLevel;
+    suggestion: string;
+  }>;
+};
+
+export type GenerateRewriteOptionsResponse = {
+  result: {
+    edits: EvaluationEdit[];
+  };
+};
+
+/**
+ * Deprecated legacy rewrite endpoint types.
+ * Kept to avoid breaking older files if still imported.
+ */
 export type RewriteFragmentRequest = {
-  /**
-   * Full section for emotional continuity reference only.
-   * AI must rewrite ONLY the targetQuote.
-   */
   fullSection: string;
-
-  /**
-   * Exact fragment selected from evaluation.
-   */
   targetQuote: string;
-
-  /**
-   * Evaluation output
-   */
   issue: string;
-
   impactLevel: ImpactLevel;
-
   suggestion: string;
-
-  rewriteHint: RewriteHint;
-
-  /**
-   * Optional generation context
-   * (audience, synthesis, voice profile, etc.)
-   */
+  rewriteHint?: RewriteHint;
   context?: any;
 };
 
@@ -297,7 +386,7 @@ export type RewriteFragmentResponse = {
 };
 
 /* ─────────────────────────────
-   SUPABASE MODEL (CRITICAL FIX)
+   SUPABASE MODEL
 ───────────────────────────── */
 
 export type AnalysisDBRow = {
@@ -319,13 +408,12 @@ export type AnalysisDBRow = {
   created_at: string;
 };
 
-// lib/types/scriptEvaluation.ts
-
 export interface ScriptEvaluateResult {
   motifFlags: MotifFlag[];
   tensionCurve: TensionCurveFlag[];
   anchorOveruse: AnchorFlag[];
   conclusiveEndings: ConclusiveEndingFlag[];
+  sectionContractFlags: SectionContractFlag[];
   summary: {
     passCount: number;
     flagCount: number;
@@ -337,15 +425,15 @@ export interface MotifFlag {
   motif: string;
   count: number;
   appearances: {
-    section: string;
+    section: SectionKey;
     quote: string;
   }[];
-  verdict: "ok" | "overused";
+  verdict: "overused";
   advice?: string;
 }
 
 export interface TensionCurveFlag {
-  section: string;
+  section: SectionKey;
   expectedLevel: number;
   issue: string | null;
   advice?: string;
@@ -353,14 +441,21 @@ export interface TensionCurveFlag {
 
 export interface AnchorFlag {
   detail: string;
-  sections: string[];
-  verdict: "ok" | "overused";
+  sections: SectionKey[];
+  verdict: "overused";
   advice?: string;
 }
 
 export interface ConclusiveEndingFlag {
-  advice?: string;
-  section: string;
+  section: SectionKey;
   quote: string;
   issue: string;
+  advice?: string;
+}
+
+export interface SectionContractFlag {
+  section: SectionKey;
+  quote: string;
+  issue: string;
+  advice?: string;
 }

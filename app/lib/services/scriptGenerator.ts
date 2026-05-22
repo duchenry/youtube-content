@@ -11,13 +11,14 @@ const client = new Anthropic({
   baseURL: "https://api.shopaikey.com",
 });
 
+// ── UPDATED: new section keys ──────────────────────────────
 const TOKEN_BUDGET: Record<SectionKey, number> = {
-  hook: 600,
-  setup: 1200,
-  contradiction: 1600,
-  reframe: 900,
-  solution: 1100,
-  close: 500,
+  hook:       600,
+  crack:      900,
+  expose:    1200,
+  validate:   800,
+  framework:  900,
+  close:      500,
 };
 
 async function callClaude(prompt: string, maxTokens: number) {
@@ -96,17 +97,18 @@ export async function generateFullScript(data: any, analysisId: string): Promise
     wordCount: countWords(sectionTexts[k] ?? ""),
   });
 
+  // ── UPDATED: new section keys ──────────────────────────────
   return {
     id: analysisId,
     status: "FINAL",
     fullScript,
     sections: {
-      hook: s("hook"),
-      setup: s("setup"),
-      contradiction: s("contradiction"),
-      reframe: s("reframe"),
-      solution: s("solution"),
-      close: s("close"),
+      hook:      s("hook"),
+      crack:     s("crack"),
+      expose:    s("expose"),
+      validate:  s("validate"),
+      framework: s("framework"),
+      close:     s("close"),
     },
   };
 }

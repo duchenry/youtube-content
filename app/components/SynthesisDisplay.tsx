@@ -116,6 +116,8 @@ export function SynthesisDisplay({ data }: Props) {
       <Section title="Core Engine">
         <Row label="Contradiction" value={data.coreEngine?.contradiction} />
         <Row label="Behavior Loop" value={data.coreEngine?.behaviorLoop} />
+        {/* <Row label="Villain Entity" value={data.coreEngine?.villain?.entity} />
+        <Row label="How It Operates" value={data.coreEngine?.villain?.howItOperates} /> */}
         <Row label="Identity Pressure" value={data.coreEngine?.identityPressure} />
         <Row label="No Win Loop" value={data.coreEngine?.noWinLoop} />
       </Section>
@@ -143,6 +145,20 @@ export function SynthesisDisplay({ data }: Props) {
           <Row label="Reason" value={rank.reason} />
         </Section>
       )}
+
+      {/* Positioning */}
+      <Section title="Positioning">
+        <Row label="Competitor Stance" value={data.positioning?.competitorStance} />
+        <Row label="Your Stance" value={data.positioning?.yourStance} />
+        <Row label="Voice Preset" value={data.positioning?.voicePreset} />
+      </Section>
+
+      {/* Forward Tension */}
+      <Section title="Forward Tension">
+        <Row label="Open Question" value={data.forwardTension?.openQuestion} />
+        <Row label="Aspirational Glimpse" value={data.forwardTension?.aspirationalGlimpse} />
+        <Row label="Watch Reason" value={data.forwardTension?.watchReason} />
+      </Section>
 
       {/* Author */}
       <Section title="Author Control">

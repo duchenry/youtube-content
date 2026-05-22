@@ -43,17 +43,21 @@ export function asConfidence(value: unknown): "high" | "medium" | "low" {
 function getPathValue(source: unknown, path: string): unknown {
   const tokens = path.match(/[^.[\]]+|\[(\d+)\]/g) ?? [];
   let current: unknown = source;
+
   for (const token of tokens) {
     if (current === null || current === undefined) return undefined;
+
     if (token.startsWith("[")) {
       const index = Number(token.slice(1, -1));
       if (!Array.isArray(current) || Number.isNaN(index)) return undefined;
       current = current[index];
       continue;
     }
+
     if (!isRecord(current)) return undefined;
     current = current[token];
   }
+
   return current;
 }
 
@@ -75,6 +79,24 @@ export function renderPromptTemplate(
   });
 }
 
+// ─────────────────────────────────────────────
+// NORMALIZE PROVIDER RESPONSE
+// Some proxy providers return the Anthropic completion as a stringified JSON.
+// This converts it back into an object before reading completion.content.
+// ─────────────────────────────────────────────
+
+function normalizeCompletion(completion: unknown): any {
+  if (typeof completion === "string") {
+    try {
+      return JSON.parse(completion);
+    } catch {
+      return completion;
+    }
+  }
+
+  return completion;
+}
+
 // Trích text từ content trả về — hỗ trợ cả OpenAI-style lẫn Anthropic-style blocks
 function extractMessageText(content: unknown): string {
   if (typeof content === "string") return content.trim();
@@ -92,6 +114,7 @@ function extractMessageText(content: unknown): string {
 
       // Fallback for any nested structure
       if (typeof part.content === "string") return part.content;
+
       return "";
     })
     .filter(Boolean)
@@ -119,13 +142,13 @@ function extractJsonObject(raw: string): JsonRecord {
   for (let candidate of candidates) {
     try {
       // Clean lỗi phổ biến của Claude 4.6
-      let cleaned = candidate
+      const cleaned = candidate
         // Bỏ trailing commas trước ] hoặc }
-        .replace(/,(\s*[\]}])/g, '$1')
+        .replace(/,(\s*[\]}])/g, "$1")
         // Bỏ comments dạng //
-        .replace(/\/\/.*$/gm, '')
+        .replace(/\/\/.*$/gm, "")
         // Bỏ comments dạng /* */
-        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/\/\*[\s\S]*?\*\//g, "")
         // Fix quotes bị lỗi
         .replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3');
 
@@ -159,6 +182,7 @@ export async function callModel(
   maxTokens: number,
 ): Promise<JsonRecord> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
+
   if (!apiKey) {
     throw new Error("ANTHROPIC_API_KEY is not configured in .env.local");
   }
@@ -167,7 +191,7 @@ export async function callModel(
     apiKey,
     baseURL: "https://api.shopaikey.com",
   });
-  console.log("[callModel] apiKey:", apiKey?.slice(0, 10));
+
   console.log("[callModel] baseURL:", process.env.ANTHROPIC_BASE_URL);
 
   const completion = await anthropic.messages.create({
@@ -185,36 +209,63 @@ export async function callModel(
       "You are a precise JSON engine. Return only valid JSON for the user prompt, no extra text, no comments, no markdown fences.",
   });
 
-  console.log("[callModel] finish_reason:", completion.stop_reason);
-  const raw = extractMessageText(completion.content as unknown);
-  if (!raw) throw new Error("Empty response from model");
+  const normalizedCompletion = normalizeCompletion(completion);
+
+  console.log("[callModel] finish_reason:", normalizedCompletion?.stop_reason);
+
+  const raw = extractMessageText(normalizedCompletion?.content as unknown);
+
+  if (!raw) {
+    console.error(
+      "[callModel] Empty response content:",
+      JSON.stringify(normalizedCompletion?.content, null, 2)
+    );
+
+    console.error(
+      "[callModel] Full completion:",
+      typeof completion === "string"
+        ? completion
+        : JSON.stringify(completion, null, 2)
+    );
+
+    throw new Error("Empty response from model");
+  }
 
   // ✅ Fix Claude 4.6 max tokens truncation
   // Claude 4.6 rất thường bị cắt ngang output khi đạt max_tokens, không báo lỗi gì cả
-  if (completion.stop_reason === "max_tokens") {
+  if (normalizedCompletion?.stop_reason === "max_tokens") {
     console.warn("⚠️  Claude 4.6 bị cắt ngang output do max tokens giới hạn!");
+
     // Thêm dấu đóng ngoặc thủ công để cứu JSON đã cắt
     const addClosingBrackets = (str: string): string => {
       let result = str;
+
       // Đếm số ngoặc mở chưa đóng
-      let openBraces = (result.match(/{/g) || []).length;
+      const openBraces = (result.match(/{/g) || []).length;
       let closeBraces = (result.match(/}/g) || []).length;
-      let openBrackets = (result.match(/\[/g) || []).length;
+      const openBrackets = (result.match(/\[/g) || []).length;
       let closeBrackets = (result.match(/]/g) || []).length;
-      
+
       // Đóng tất cả ngoặc còn thiếu
-      while (closeBraces < openBraces) { result += '}'; closeBraces++; }
-      while (closeBrackets < openBrackets) { result += ']'; closeBrackets++; }
-      
+      while (closeBraces < openBraces) {
+        result += "}";
+        closeBraces++;
+      }
+
+      while (closeBrackets < openBrackets) {
+        result += "]";
+        closeBrackets++;
+      }
+
       // Clean trailing comma cuối cùng nếu có
-      result = result.replace(/,\s*([}\]])/g, '$1');
-      
+      result = result.replace(/,\s*([}\]])/g, "$1");
+
       return result;
     };
-    
+
     const rescued = addClosingBrackets(raw);
     console.log("✅ Đã cứu JSON bị cắt ngang từ Claude 4.6");
-    
+
     try {
       return extractJsonObject(rescued);
     } catch {

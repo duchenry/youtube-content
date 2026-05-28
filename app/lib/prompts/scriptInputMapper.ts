@@ -69,10 +69,33 @@ export function mapToScriptInputs(
     research?.primaryContradiction?.description ||
     "";
 
-  const primaryAspirationalGlimpse =
-    synthesis?.forwardTension?.aspirationalGlimpse ||
-    synthesis?.beliefShift?.to ||
+  // ─────────────────────────────────────────────────────────────
+  // ANCHOR EXTRACTION — by use position
+  // ─────────────────────────────────────────────────────────────
+
+  const anchors: Array<{ scenario: string; emotion: string; use: string }> =
+    synthesis?.anchors || [];
+
+  const hookAnchor =
+    anchors.find((a) => a.use === "hook")?.scenario || "";
+
+  const midAnchor =
+    anchors.find((a) => a.use === "mid")?.scenario || "";
+
+  // Prefer relief proof anchor — creates stronger validate arc
+  const proofAnchor =
+    anchors.find((a) => a.use === "proof" && a.emotion === "relief")?.scenario ||
+    anchors.find((a) => a.use === "proof")?.scenario ||
     "";
+
+  // ─────────────────────────────────────────────────────────────
+  // PHYSICAL DETAIL — join array into usable string
+  // ─────────────────────────────────────────────────────────────
+
+  const physicalDetail =
+    synthesis?.physicalDetail?.length
+      ? synthesis.physicalDetail.join("\n")
+      : "";
 
   // ─────────────────────────────────────────────────────────────
   // VILLAIN — prefer current synthesis schema, keep old fallback
@@ -94,7 +117,7 @@ export function mapToScriptInputs(
     "";
 
   // ─────────────────────────────────────────────────────────────
-  // VALIDATE fields — fallback chain
+  // VALIDATE fields — now includes unspokenNeed + structuralConstraint
   // ─────────────────────────────────────────────────────────────
 
   const structuralProof =
@@ -109,6 +132,12 @@ export function mapToScriptInputs(
     synthesis?.beliefShift?.to ||
     extraction?.coreTruth?.insight ||
     "";
+
+  const unspokenNeed =
+    synthesis?.scriptBridge?.unspokenNeed || "";
+
+  const structuralConstraint =
+    synthesis?.scriptBridge?.constraint || "";
 
   // ─────────────────────────────────────────────────────────────
   // FRAMEWORK fields — fallback chain
@@ -132,13 +161,16 @@ export function mapToScriptInputs(
     "";
 
   // ─────────────────────────────────────────────────────────────
-  // CLOSE fields — fallback chain
+  // CLOSE fields — now includes noWinAsymmetry
   // ─────────────────────────────────────────────────────────────
 
   const debateQuestion =
     synthesis?.forwardTension?.openQuestion ||
     primaryContradiction ||
     "";
+
+  const noWinAsymmetry =
+    synthesis?.scriptBridge?.noWinAsymmetry || "";
 
   // ─────────────────────────────────────────────────────────────
   // CHARACTER PROSE → feeds buildVoice()
@@ -197,6 +229,8 @@ export function mapToScriptInputs(
       contradiction: primaryContradiction,
       falseBelief: synthesis?.beliefShift?.from || "",
       openQuestion: primaryOpenQuestion,
+      hookAnchor,
+      physicalDetail,
     },
 
     // ── CRACK ────────────────────────────────────────────────────
@@ -205,6 +239,8 @@ export function mapToScriptInputs(
       falseBelief: synthesis?.beliefShift?.from || "",
       crackMoment: synthesis?.beliefShift?.breakMoment || "",
       contradiction: primaryContradiction,
+      midAnchor,
+      realPain: synthesis?.pain?.real || "",
     },
 
     // ── EXPOSE ───────────────────────────────────────────────────
@@ -222,6 +258,9 @@ export function mapToScriptInputs(
       structuralProof,
       structuralGap,
       validationLine,
+      proofAnchor,
+      unspokenNeed,
+      structuralConstraint,
     },
 
     // ── FRAMEWORK ────────────────────────────────────────────────
@@ -239,6 +278,7 @@ export function mapToScriptInputs(
       sideA: synthesis?.beliefShift?.from || "",
       sideB: synthesis?.beliefShift?.to || "",
       coreTruth: extraction?.coreTruth?.insight || "",
+      noWinAsymmetry,
     },
   };
 }

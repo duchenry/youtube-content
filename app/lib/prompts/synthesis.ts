@@ -104,6 +104,10 @@ OUTPUT SCHEMA (STRICT)
 
   "confidenceNotes": "short reason for confidence",
 
+  "physicalDetail": [
+  "3–5 concrete sensory details for the hook scene: object, time, light, posture, or sound. Must come from REDDIT_DATA or EXTRACTION_JSON. Use INSUFFICIENT_DATA if unavailable."
+]
+
   "scriptBridge": {
     "optionA": {
       "action": "what character does / considers",
@@ -151,6 +155,12 @@ villain.howItOperates must describe the mechanism without the viewer knowing —
 yourStance must differ from competitorStance
 if competitorStance is explain_mechanism → yourStance must be before_problem or inside_feeling
 voicePreset must be consistent with yourStance
+
+9. PHYSICAL DETAIL RULE:
+physicalDetail must contain 3–5 items minimum
+each item must be a specific object, time, or sensory detail — not a mood or abstraction
+BAD: "late at night, feeling stressed"
+GOOD: "Sunday 11pm, laptop open on kitchen table, $130 remaining on screen"
 
 ━━━━━━━━━━━━━━━━━━━━━
 

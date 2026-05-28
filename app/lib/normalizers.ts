@@ -198,6 +198,9 @@ export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
   const exec = asRecord(r.execution);
   const ac = asRecord(r.authorControl);
   const rk = asRecord(r.ranking);
+  const sb = asRecord(r.scriptBridge);
+  const sbA = asRecord(sb.optionA);
+  const sbB = asRecord(sb.optionB);
 
   return {
     focusPriority: {
@@ -268,9 +271,21 @@ export function normalizeSynthesis(raw: JsonRecord): StrategicSynthesis {
       top2: asString(rk.top2),
       top3: asString(rk.top3),
       reason: asString(rk.reason),
-      signals: Array.isArray(rk.signals)
-        ? rk.signals.map((s: any) => asString(s))
-        : undefined,
+    },
+
+    scriptBridge: {
+      optionA: {
+        action: asString(sbA.action),
+        cost: asString(sbA.cost),
+      },
+      optionB: {
+        action: asString(sbB.action),
+        cost: asString(sbB.cost),
+      },
+      noWinAsymmetry: asString(sb.noWinAsymmetry),
+      unspokenNeed: asString(sb.unspokenNeed),
+      constraint: asString(sb.constraint),
+      coreTruth: asString(sb.coreTruth),
     },
 
     physicalDetail: Array.isArray(r.physicalDetail)

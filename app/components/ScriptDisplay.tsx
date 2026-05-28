@@ -33,7 +33,9 @@ export function ScriptDisplay({
   const [scriptEvaluation, setScriptEvaluation] =
     useState<ScriptEvaluateResult | null>(null);
 
-  console.log("scriptEvaluation", scriptEvaluation);
+  // console.log("scriptEvaluation", scriptEvaluation);
+  // console.log("evaluation section", evaluations);
+  // console.log("data", data)
 
   const [selectedRewrite, setSelectedRewrite] = useState<string | null>(null);
 
@@ -708,7 +710,7 @@ export function ScriptDisplay({
         {loadingScriptEval ? "Analyzing Script..." : "✨ Analyze Full Script"}
       </button>
 
-      {scriptEvaluation && (
+      {/* {scriptEvaluation && (
         <div className="rounded-xl border border-[#1a1a1a] bg-[#0d0d0d] p-4 space-y-6">
           <div className="flex gap-6 text-xs">
             <div className="text-[#888]">
@@ -878,7 +880,7 @@ export function ScriptDisplay({
             </div>
           )}
         </div>
-      )}
+      )} */}
 
       {editing && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">

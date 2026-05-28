@@ -150,6 +150,20 @@ export interface ResearchDirective {
    STEP 3 - SYNTHESIS
 ───────────────────────────── */
 
+export interface ScriptBridgeOption {
+  action: string;
+  cost: string;
+}
+
+export interface ScriptBridge {
+  optionA: ScriptBridgeOption;
+  optionB: ScriptBridgeOption;
+  noWinAsymmetry: string;
+  unspokenNeed: string;
+  constraint: string;
+  coreTruth: string;
+}
+
 export interface StrategicSynthesis {
   focusPriority: {
     primary: "contradiction" | "behavior" | "identity" | "no_win";
@@ -214,8 +228,9 @@ export interface StrategicSynthesis {
     top2: string;
     top3: string;
     reason: string;
-    signals?: string[];
   };
+
+  scriptBridge: ScriptBridge;
 
   confidenceNotes: string;
 

@@ -261,7 +261,8 @@ OUTPUT JSON:
 
 // ─────────────────────────────────────────────────────────────
 // HOOK
-// Variables: rawPain, contradiction, falseBelief, openQuestion
+// Variables: rawPain, contradiction, falseBelief, openQuestion,
+//            hookAnchor, physicalDetail
 // ─────────────────────────────────────────────────────────────
 
 export const HOOK_PROMPT = `
@@ -277,12 +278,16 @@ Surface pain: {{rawPain}}
 Contradiction: {{contradiction}}
 False belief viewer holds: {{falseBelief}}
 Open question: {{openQuestion}}
+Opening scene anchor: {{hookAnchor}}
+Physical details (use at least 1): {{physicalDetail}}
 
 TASK:
 Open with the contradiction — 1 sentence, no setup.
 Do NOT explain it yet. Let it create dissonance.
 Follow with 2–3 sentences that widen the dissonance.
 Use {{falseBelief}} against the contradiction — show why it shouldn't be possible.
+Ground the opening in {{hookAnchor}} — use the scenario as the scene, not as illustration.
+Pull at least 1 specific detail from {{physicalDetail}} into the first 3 sentences.
 Plant {{openQuestion}} — do not answer it.
 End on the contradiction — unresolved, present, uncomfortable.
 
@@ -307,7 +312,8 @@ BAD opening lines:
 
 // ─────────────────────────────────────────────────────────────
 // CRACK
-// Variables: falseBelief, crackMoment, contradiction
+// Variables: falseBelief, crackMoment, contradiction, midAnchor,
+//            realPain
 // ─────────────────────────────────────────────────────────────
 
 export const CRACK_PROMPT = `
@@ -324,11 +330,15 @@ Continue from (last 3–5 sentences only): "{{lastLines}}"
 False assumption viewer holds: {{falseBelief}}
 The crack — what breaks the assumption: {{crackMoment}}
 Scenario that makes the crack visible: {{contradiction}}
+Mid anchor — real scenario to make the crack concrete: {{midAnchor}}
+What viewer already knows but won't say out loud: {{realPain}}
 
 TASK:
 Show why {{falseBelief}} is wrong — not by arguing, by showing.
 Use {{crackMoment}} as the moment the assumption breaks.
 Use {{contradiction}} to make it concrete and visible.
+Use {{midAnchor}} as the specific scenario — not as background, as the scene itself.
+Use {{realPain}} to show the behavior the viewer performs to hide what they already know — the performance of anxiety, not the actual fear.
 Do not explain the full mechanism yet. Just show the seam.
 Address the viewer directly throughout.
 
@@ -336,8 +346,10 @@ STRUCTURE:
 1. Re-enter from lastLines. One sentence. No summary.
 2. State {{falseBelief}} as the viewer holds it.
 3. Show the crack using {{crackMoment}} and {{contradiction}}.
-4. One sentence that names what this implies — but does not finish the thought.
-5. End before the conclusion arrives.
+4. Ground it in {{midAnchor}} — one real situation, named specifically.
+5. Surface {{realPain}} — name what the viewer is performing vs what they actually know.
+6. One sentence that names what this implies — but does not finish the thought.
+7. End before the conclusion arrives.
 
 WORD COUNT: 250–320 words.
 `;
@@ -388,7 +400,8 @@ WORD COUNT: 380–480 words.
 
 // ─────────────────────────────────────────────────────────────
 // VALIDATE
-// Variables: structuralProof, structuralGap, validationLine
+// Variables: structuralProof, structuralGap, validationLine,
+//            proofAnchor, unspokenNeed, structuralConstraint
 // ─────────────────────────────────────────────────────────────
 
 export const VALIDATE_PROMPT = `
@@ -405,21 +418,29 @@ Continue from (last 3–5 sentences only): "{{lastLines}}"
 Structural proof: {{structuralProof}}
 Structural gap — the no-win loop: {{structuralGap}}
 Validation line: {{validationLine}}
+Proof anchor — real scenario showing life after the constraint lifts: {{proofAnchor}}
+What viewer actually needs vs what they say they need: {{unspokenNeed}}
+Structural constraint — why this is not fixable by personal discipline: {{structuralConstraint}}
 
 TASK:
 Release shame — but only through proof, not reassurance.
-Show {{structuralProof}} first — evidence this is structural, not personal.
+Show {{structuralConstraint}} first — the structural reason why personal discipline cannot fix this.
+Show {{structuralProof}} — evidence this is systemic, not personal.
 Show {{structuralGap}} — the specific loop that proves the system is misaligned.
-Deliver {{validationLine}} as validation — must be specific enough to screenshot.
+Use {{proofAnchor}} as the structural evidence — not as inspiration, as the actual scenario.
+Deliver {{validationLine}} only after proof is established — must be specific enough to screenshot.
+Frame the release around {{unspokenNeed}} — validate what they actually need, not what they say they need.
 
 STRUCTURE:
 1. Re-enter from lastLines. One flat observation.
-2. Show {{structuralProof}} — structural, not personal.
-3. Show {{structuralGap}} — the no-win loop viewer is trapped in.
-4. Deliver {{validationLine}}.
+2. Show {{structuralConstraint}} — why the gap is structural, not personal.
+3. Show {{structuralProof}} — systemic evidence.
+4. Show {{structuralGap}} — the no-win loop viewer is trapped in.
+5. Use {{proofAnchor}} — name the scenario directly. Do not paraphrase into abstraction.
+6. Deliver {{validationLine}}.
    BAD: "This isn't your fault."
    GOOD: "This loop was designed before you walked in."
-5. End on the implication — not the emotion.
+7. End on the implication — not the emotion.
 
 SCREENSHOT TEST:
 Before finalizing — identify the 1 sentence a viewer would screenshot.
@@ -473,7 +494,8 @@ WORD COUNT: 300–420 words.
 
 // ─────────────────────────────────────────────────────────────
 // CLOSE
-// Variables: debateQuestion, sideA, sideB, coreTruth
+// Variables: debateQuestion, sideA, sideB, coreTruth,
+//            noWinAsymmetry
 // ─────────────────────────────────────────────────────────────
 
 export const CLOSE_PROMPT = `
@@ -491,6 +513,7 @@ Debate question: {{debateQuestion}}
 Side A: {{sideA}}
 Side B: {{sideB}}
 Core truth: {{coreTruth}}
+No-win asymmetry: {{noWinAsymmetry}}
 
 TASK:
 Do not summarize. Do not conclude.
@@ -499,8 +522,9 @@ End on {{debateQuestion}} — a question that forces the viewer to pick a side.
 STRUCTURE:
 1. One sentence that reframes the entire video — not a summary.
 2. State {{coreTruth}} — the one thing this video existed to prove.
-3. Name {{sideA}} and {{sideB}} — let viewer self-select.
-4. Final sentence must be {{debateQuestion}} or a forced-choice version of it.
+3. Use {{noWinAsymmetry}} to show why both sides of the debate carry real cost — neither option is safe.
+4. Name {{sideA}} and {{sideB}} — let viewer self-select.
+5. Final sentence must be {{debateQuestion}} or a forced-choice version of it.
 
 DEBATE QUESTION RULES:
 - Final sentence must be the debate question or a forced-choice version of it.
@@ -556,7 +580,6 @@ export function renderScriptPrompt(
   template: string,
   values: Record<string, any>
 ): string {
-  // GUARD: prevent replaceAll crash on undefined template
   if (!template || typeof template !== "string") {
     console.error("[renderScriptPrompt] Template is undefined or not a string.");
     return "";
@@ -577,7 +600,6 @@ export function renderScriptPrompt(
     (_, rawKey) => {
       const key = rawKey.trim();
       console.warn(`[renderScriptPrompt] Unresolved variable: {{${key}}}`);
-      // No fabricated fallbacks — empty string forces AI to work with what it has
       return "";
     }
   );

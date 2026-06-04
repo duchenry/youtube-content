@@ -49,7 +49,6 @@ export async function POST(req: Request) {
     // ─────────────────────────────────────
     // BUILD PROMPT
     // ─────────────────────────────────────
-    console.log("fullScript", fullScript)
     const prompt = buildScriptEvaluatePrompt(fullScript);
 
     // ─────────────────────────────────────

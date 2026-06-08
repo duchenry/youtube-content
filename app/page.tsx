@@ -49,6 +49,7 @@ export default function Home() {
   const [commentMode, setCommentMode] = useState<"individual" | "bulk">("individual");
   const [bulkComments, setBulkComments] = useState("");
 
+  // console.log("synthesis", synthesis)
   const { history, loading: historyLoading, saveAnalysis, deleteAnalysis, fetchHistory } =
     useHistory();
   // ── Restore session from localStorage on mount ──

@@ -33,9 +33,15 @@ export function ScriptDisplay({
   const [scriptEvaluation, setScriptEvaluation] =
     useState<ScriptEvaluateResult | null>(null);
 
-  // console.log("scriptEvaluation", scriptEvaluation);
+  console.log("scriptEvaluation", scriptEvaluation);
   // console.log("evaluation section", evaluations);
-  // console.log("data", data)
+
+  const totalWords = Object.values(data?.sections || {}).reduce(
+    (acc, obj) => acc + (obj.wordCount || 0), 
+    0
+  );
+
+  // const totalWord = data?.sections.reduce((acc, curr) => acc + curr.,0)
 
   const [selectedRewrite, setSelectedRewrite] = useState<string | null>(null);
 
@@ -698,6 +704,7 @@ export function ScriptDisplay({
     <div className="space-y-6 mt-6">
       <div className="flex justify-between">
         <h2 className="text-white text-xl">Generated Script</h2>
+        <h2 className="text-white text-xl"><span className="text-purple-500">Total Words: </span>{totalWords}</h2>
 
         <span className="text-xs text-[#555]">{status}</span>
       </div>

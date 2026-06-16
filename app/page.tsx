@@ -25,7 +25,6 @@ export default function Home() {
   const [comments, setComments] = useState<string[]>(Array(30).fill(""));
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
-  const [partialSkeletonResult, setPartialSkeletonResult] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -34,6 +33,7 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(1);
+  const [view, setView] = useState<"input" | "analysis">("input");
   const [research, setResearch] = useState<ResearchDirective | null>(null);
   const [synthesis, setSynthesis] = useState<StrategicSynthesis | null>(null);
   const [generatedScript, setGeneratedScript] = useState<GeneratedScript | null>(null);
@@ -50,8 +50,10 @@ export default function Home() {
   const [bulkComments, setBulkComments] = useState("");
 
   // console.log("synthesis", synthesis)
+  console.log("result", result)
   const { history, loading: historyLoading, saveAnalysis, deleteAnalysis, fetchHistory } =
     useHistory();
+
   // ── Restore session from localStorage on mount ──
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
@@ -62,6 +64,8 @@ export default function Home() {
         if (s.script) setScript(s.script);
         if (s.comments) setComments(s.comments);
         if (s.step) setStep(s.step);
+        if (s.view) setView(s.view);
+        else if (s.result) setView("analysis");
         if (s.result) setResult(s.result);
         if (s.research) setResearch(s.research);
         if (s.synthesis) setSynthesis(s.synthesis);
@@ -72,82 +76,99 @@ export default function Home() {
     } catch { /* corrupt data — ignore */ }
     setHydrated(true);
   }, []);
+
   // ── Persist session to localStorage on change ──
   useEffect(() => {
     if (!hydrated) return;
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify({
-        script, comments, step, result, research, synthesis, generatedScript, redditEntries, activeId,
+        script,
+        comments,
+        step,
+        view,
+        result,
+        research,
+        synthesis,
+        generatedScript,
+        redditEntries,
+        activeId,
       }));
     } catch { /* quota exceeded — ignore */ }
-  }, [hydrated, script, comments, step, result, research, synthesis, generatedScript, redditEntries, activeId]);
+  }, [hydrated, script, comments, step, view, result, research, synthesis, generatedScript, redditEntries, activeId]);
 
   const charCount = script.length;
   const wordCount = script.trim() ? script.trim().split(/\s+/).length : 0;
 
-async function handleAnalyze() {
-  if (!script.trim() || script.trim().length < 50) {
-    setError("Please paste a script with at least 50 characters.");
-    return;
-  }
-
-  setLoading(true);
-  setLoadingMessage("Đang phân tích toàn bộ pipeline...");
-  setError(null);
-  setSaveError(null);
-  setResult(null);
-  setActiveId(null);
-
-  try {
-    // ✅ SINGLE API CALL ONLY
-    const res = await fetch("/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        script,
-        comments: comments.filter((c) => c.trim()),
-      }),
-    });
-
-    const json = await res.json();
-
-    if (!res.ok || json.error) {
-      throw new Error(json.error || "Analysis failed.");
+  async function handleAnalyze() {
+    if (!script.trim() || script.trim().length < 50) {
+      setError("Please paste a script with at least 50 characters.");
+      return;
     }
 
-    const finalResult: AnalysisResult = json.result;
+    setLoading(true);
+    setLoadingMessage("Đang phân tích toàn bộ pipeline...");
+    setError(null);
+    setSaveError(null);
+    setResult(null);
+    setResearch(null);
+    setSynthesis(null);
+    setGeneratedScript(null);
+    setStep(1);
+    setActiveId(null);
 
-    setResult(finalResult);
-
-    // 💾 SAVE
-    setSaving(true);
-
-    const savedId = await saveAnalysis(script, comments, finalResult);
-
-    if (savedId) {
-      setActiveId(savedId);
-    } else {
-      setSaveError("Analysis complete, but failed to save to history.");
-    }
-
-    setSaving(false);
-
-    setTimeout(() => {
-      resultsRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
+    try {
+      // ✅ SINGLE API CALL ONLY
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          script,
+          comments: comments.filter((c) => c.trim()),
+        }),
       });
-    }, 100);
 
-  } catch (err) {
-    setError(err instanceof Error ? err.message : "An error occurred.");
-  } finally {
-    setLoading(false);
+      const json = await res.json();
+
+      if (!res.ok || json.error) {
+        throw new Error(json.error || "Analysis failed.");
+      }
+
+      const finalResult: AnalysisResult = json.result;
+
+      setResult(finalResult);
+      setStep(1);
+      setView("analysis");
+
+      // 💾 SAVE
+      setSaving(true);
+
+      const savedId = await saveAnalysis(script, comments, finalResult);
+
+      if (savedId) {
+        setActiveId(savedId);
+      } else {
+        setSaveError("Analysis complete, but failed to save to history.");
+      }
+
+      setSaving(false);
+
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred.");
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   function handleSelectHistory(entry: HistoryEntry) {
     setResult(entry.result);
+    setView("analysis");
     setActiveId(entry.id);
     setScript(entry.script_preview);
     const commentsArray = entry.comments
@@ -163,11 +184,10 @@ async function handleAnalyze() {
     setResearch(entry.research || null);
     setSynthesis(entry.synthesis || null);
     setGeneratedScript(
-  entry.generated_script
-    ? normalizeScript(entry.generated_script as any)
-    : null
-);
-
+      entry.generated_script
+        ? normalizeScript(entry.generated_script as any)
+        : null
+    );
 
     // Parse reddit_raw back into structured entries if available
     if (entry.reddit_raw) {
@@ -188,11 +208,24 @@ async function handleAnalyze() {
     }, 100);
   }
 
+  function handleEditInput() {
+    setView("input");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function handleNew() {
-    setScript(""); setComments(Array(30).fill(""));
-    setResult(null); setActiveId(null);
-    setError(null); setSaveError(null);
-    setStep(1); setResearch(null); setSynthesis(null); setRedditEntries([{ post: "", comments: [""] }]);
+    setScript("");
+    setComments(Array(30).fill(""));
+    setResult(null);
+    setActiveId(null);
+    setError(null);
+    setSaveError(null);
+    setStep(1);
+    setView("input");
+    setResearch(null);
+    setSynthesis(null);
+    setGeneratedScript(null);
+    setRedditEntries([{ post: "", comments: [""] }]);
     localStorage.removeItem(SESSION_KEY);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -201,6 +234,7 @@ async function handleAnalyze() {
     await deleteAnalysis(id);
     if (activeId === id) handleNew();
   }
+
   async function handleStep2() {
     if (!result) return;
     setStepLoading(true); setError(null);
@@ -228,13 +262,13 @@ async function handleAnalyze() {
         } else {
           console.log("[Step 2] ✅ RESEARCH SAVED TO DATABASE SUCCESSFULLY");
         }
-        
+
         // Refresh history
         fetchHistory();
       }
 
       // ✅ SAU ĐÓ MỚI THAY ĐỔI STATE
-      setResearch(json.result); 
+      setResearch(json.result);
       setStep(2);
 
     } catch (err) { setError(err instanceof Error ? err.message : "Step 2 failed"); }
@@ -265,17 +299,17 @@ async function handleAnalyze() {
     try {
       const res = await fetch("/api/enrich", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          extraction: result, 
+        body: JSON.stringify({
+          extraction: result,
           redditData: data,
           authorInput: Object.values(authorInput).some(v => v.trim()) ? authorInput : undefined
         }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error || "Step 3 failed");
-      
+
       console.log("[Step 3] Synthesis received from API:", Object.keys(json.result || {}));
-      
+
       if (activeId) {
         console.log("[Step 3] Saving synthesis to DB...");
         const normalized = normalizeSynthesis(json.result);
@@ -294,57 +328,57 @@ async function handleAnalyze() {
       } else {
         console.warn("[Step 3] No activeId - cannot save to Supabase");
       }
-      
+
       // ✅ LƯU VÀO DB TRƯỚC, SAU ĐÓ MỚI THAY ĐỔI STATE
-      setSynthesis(json.result); 
+      setSynthesis(json.result);
       setStep(3);
     } catch (err) { setError(err instanceof Error ? err.message : "Step 3 failed"); }
     finally { setStepLoading(false); }
   }
 
- async function handleStep4() {
-  if (!result || !synthesis) return;
+  async function handleStep4() {
+    if (!result || !synthesis) return;
 
-  setStepLoading(true);
-  setError(null);
+    setStepLoading(true);
+    setError(null);
 
-  try {
-    const res = await fetch("/api/generate-script", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        extraction: result,
-        research,
-        synthesis,
-        id: activeId, // 🔥 truyền id nếu có
-      }),
-    });
+    try {
+      const res = await fetch("/api/generate-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          extraction: result,
+          research,
+          synthesis,
+          id: activeId, // 🔥 truyền id nếu có
+        }),
+      });
 
-    const json = await res.json();
+      const json = await res.json();
 
-    if (!res.ok || json.error) {
-      throw new Error(json.error || "Step 4 failed");
+      if (!res.ok || json.error) {
+        throw new Error(json.error || "Step 4 failed");
+      }
+
+      const normalized = normalizeScript(json.result);
+
+      // ✅ 🔥 CẬP NHẬT ID CHUẨN
+      if (!activeId && json.id) {
+        setActiveId(json.id);
+      }
+
+      // ❌ REMOVE HOÀN TOÀN đoạn này
+      // supabase update ở đây là SAI
+
+      setGeneratedScript(normalized);
+      setStep(4);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Step 4 failed");
+    } finally {
+      setStepLoading(false);
     }
-
-    const normalized = normalizeScript(json.result);
-
-    // ✅ 🔥 CẬP NHẬT ID CHUẨN
-    if (!activeId && json.id) {
-      setActiveId(json.id);
-    }
-
-    // ❌ REMOVE HOÀN TOÀN đoạn này
-    // supabase update ở đây là SAI
-
-    setGeneratedScript(normalized);
-    setStep(4);
-
-  } catch (err) {
-    setError(err instanceof Error ? err.message : "Step 4 failed");
-  } finally {
-    setStepLoading(false);
   }
-}
 
   const maxDone = generatedScript ? 4 : synthesis ? 3 : research ? 2 : result ? 1 : 0;
 
@@ -395,12 +429,21 @@ async function handleAnalyze() {
             </div>
 
             {result && (
-              <button
-                onClick={handleNew}
-                className="text-[#555] hover:text-[#aaa] text-sm transition-colors"
-              >
-                ← New analysis
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleEditInput}
+                  className="text-[#555] hover:text-[#aaa] text-sm transition-colors"
+                >
+                  ← Edit input
+                </button>
+
+                <button
+                  onClick={handleNew}
+                  className="text-[#555] hover:text-[#aaa] text-sm transition-colors"
+                >
+                  New analysis
+                </button>
+              </div>
             )}
           </div>
         </header>
@@ -425,7 +468,7 @@ async function handleAnalyze() {
           )}
 
           {/* ── Input Form ── */}
-          {!result && (
+          {view === "input" && (
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -455,13 +498,13 @@ async function handleAnalyze() {
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-white text-sm font-semibold flex items-center gap-1.5">
                     Viewer Comments
-                     <span className="tag-pill bg-[#1a1a1a] text-[#444] normal-case font-normal ml-1">
-                       optional · max 30
-                     </span>
+                    <span className="tag-pill bg-[#1a1a1a] text-[#444] normal-case font-normal ml-1">
+                      optional · max 30
+                    </span>
                   </label>
-                  
+
                   <div className="flex bg-[#111] rounded-lg p-1">
-                    <button 
+                    <button
                       onClick={() => {
                         setCommentMode("individual");
                         setBulkComments("");
@@ -470,7 +513,7 @@ async function handleAnalyze() {
                     >
                       Individual
                     </button>
-                    <button 
+                    <button
                       onClick={() => setCommentMode("bulk")}
                       className={`px-3 py-1 text-xs rounded-md transition-all ${commentMode === 'bulk' ? 'bg-[#ff2d20] text-white' : 'text-[#666] hover:text-white'}`}
                     >
@@ -512,7 +555,7 @@ async function handleAnalyze() {
                     <p className="text-[#444] text-xs mt-2">✅ Tự động parse JSON array hoặc danh sách nhiều dòng. Đã nhận {comments.filter(c => c.trim()).length} comment</p>
                   </div>
                 )}
-                
+
                 {commentMode === "individual" && (
                   <div className="space-y-2">
                     {comments.map((comment, idx) => (
@@ -562,7 +605,7 @@ async function handleAnalyze() {
 
           {loading && <LoadingSkeleton message={loadingMessage} />}
 
-          {result && !loading && (
+          {view === "analysis" && result && !loading && (
             <div ref={resultsRef}>
               {saveError && (
                 <div className="mb-4 bg-yellow-900/20 border border-yellow-900/40 rounded-xl px-4 py-2.5 text-yellow-400 text-xs flex items-center gap-2">
@@ -662,7 +705,6 @@ async function handleAnalyze() {
                       </button>
                     )}
 
-
                     {/* Quantity guide */}
                     <div className="rounded-lg bg-[#111] border border-[#1a1a1a] px-4 py-3">
                       <p className="text-[#666] text-xs leading-relaxed">
@@ -686,21 +728,21 @@ async function handleAnalyze() {
                 </>
               )}
 
-               {step === 3 && synthesis && (
-                 <>
-                   <SynthesisDisplay data={synthesis} />
-                   <div className="mt-6 flex justify-end">
-                     <button 
-                       onClick={handleStep4} 
-                       disabled={stepLoading}
-                       className="px-6 py-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-400 hover:bg-blue-500/20 disabled:opacity-50 disabled:cursor-wait transition-all font-semibold text-sm">
-                       {stepLoading ? "Đang viết script..." : "Tiếp tục → Bước 4: Tạo Script YouTube"}
-                     </button>
-                   </div>
-                 </>
-               )}
-               
-               {step === 4 && <ScriptDisplay data={generatedScript} analysisId={activeId}/>}
+              {step === 3 && synthesis && (
+                <>
+                  <SynthesisDisplay data={synthesis} />
+                  <div className="mt-6 flex justify-end">
+                    <button
+                      onClick={handleStep4}
+                      disabled={stepLoading}
+                      className="px-6 py-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-400 hover:bg-blue-500/20 disabled:opacity-50 disabled:cursor-wait transition-all font-semibold text-sm">
+                      {stepLoading ? "Đang viết script..." : "Tiếp tục → Bước 4: Tạo Script YouTube"}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {step === 4 && <ScriptDisplay data={generatedScript} analysisId={activeId} />}
             </div>
           )}
 

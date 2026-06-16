@@ -55,6 +55,7 @@ function Section({
 }
 
 export function SynthesisDisplay({ data }: Props) {
+  console.log("data", data)
   const rank = data.ranking;
 
   const csvContent = useMemo(() => {

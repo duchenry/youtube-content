@@ -34,14 +34,12 @@ export function ScriptDisplay({
     useState<ScriptEvaluateResult | null>(null);
 
   console.log("scriptEvaluation", scriptEvaluation);
-  // console.log("evaluation section", evaluations);
+  console.log("sections: ", data?.sections);
 
   const totalWords = Object.values(data?.sections || {}).reduce(
     (acc, obj) => acc + (obj.wordCount || 0), 
     0
   );
-
-  // const totalWord = data?.sections.reduce((acc, curr) => acc + curr.,0)
 
   const [selectedRewrite, setSelectedRewrite] = useState<string | null>(null);
 

@@ -150,6 +150,7 @@ export function AnalysisDisplay({ data }: Props) {
   const toggle = (k: string) => setOpen((p) => ({ ...p, [k]: !p[k] }));
 
   const d = useMemo(() => mergeData(data), [data]);
+  // console.log("data", d)
   /* -- CSV Export -- */
   const csvContent = useMemo(() => {
     const r = (s: string, f: string, v: string) =>

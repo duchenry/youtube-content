@@ -660,7 +660,7 @@ export function ScriptDisplay({
             </button>
 
             <CopyButton text={content.text} id={key} />
-            <EvalButton text={content.text} id={key} />
+            {/* <EvalButton text={content.text} id={key} /> */}
           </div>
         </div>
 
@@ -707,13 +707,13 @@ export function ScriptDisplay({
         <span className="text-xs text-[#555]">{status}</span>
       </div>
 
-      <button
+      {/* <button
         onClick={handleEvaluateScript}
         disabled={loadingScriptEval}
         className="px-3 py-1.5 rounded-lg text-xs border bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20 transition-all disabled:opacity-50"
       >
         {loadingScriptEval ? "Analyzing Script..." : "✨ Analyze Full Script"}
-      </button>
+      </button> */}
 
       {/* {scriptEvaluation && (
         <div className="rounded-xl border border-[#1a1a1a] bg-[#0d0d0d] p-4 space-y-6">

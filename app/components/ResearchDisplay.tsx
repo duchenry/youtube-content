@@ -78,7 +78,7 @@ function SearchGuide() {
 export function ResearchDisplay({ data }: Props) {
   const searchInstincts = Array.isArray(data?.searchInstincts) ? data.searchInstincts : [];
   const painSignals = Array.isArray(data?.painSignals) ? data.painSignals : [];
-
+  console.log("data research", data)
   return (
     <div className="space-y-6">
       <SearchGuide />

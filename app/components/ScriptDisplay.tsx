@@ -668,7 +668,7 @@ export function ScriptDisplay({
           <div className="mb-3 rounded-lg border border-[#222] bg-black/30 p-3 text-xs space-y-1">
             <div className="text-[#aaa]">
               <span className="text-blue-400">Verdict:</span>{" "}
-              {evalData.verdict}
+              {evalData.verdict}  
             </div>
 
             {evalData.mainProblem && (
